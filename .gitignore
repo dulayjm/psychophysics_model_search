@@ -1,0 +1,8 @@
+# images
+omniglot_realfake/
+
+# pycache
+__pycache__/
+
+# logging
+lightning_logs/
