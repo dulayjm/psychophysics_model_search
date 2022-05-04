@@ -18,6 +18,7 @@ from torch.utils.data import random_split, Dataset
 from pytorch_lightning.loggers import WandbLogger
 
 from dataset import OmniglotReactionTimeDataset
+from psychloss import RtPsychCrossEntropyLoss
 
 class MetricCallback(Callback):
     def __init__(self):
@@ -38,10 +39,10 @@ class Model(LightningModule):
         self.dataset = args.dataset_file
         self.model_name = args.model_name
         self.loss_name = args.loss_fn
-                
+
         if self.loss_name == 'cross_entropy':
-            self.loss_fn=nn.CrossEntropyLoss()
-       
+            self.loss_fn == nn.CrossEntropyLoss()
+
         # define model - using argparser or someting like tha
         if self.model_name == 'resnet':
             self.model = torchvision.models.resnet50(pretrained=True)
@@ -114,10 +115,8 @@ class Model(LightningModule):
 
         if self.loss_name == 'cross_entropy':
             loss = self.loss_fn(outputs, labels)
-        elif self.loss_name == 'psych_acc': 
-            loss = self.loss_fn(outputs, labels, psych_tensor)
-        else:
-            loss = self.loss_fn(outputs, labels, psych_tensor)
+        elif self.loss_name == 'psych_rt':
+            loss = RtPsychCrossEntropyLoss(outputs, labels, psych_tensor)
 
         # calculate accuracy per class
         labels_hat = torch.argmax(outputs, dim=1)
@@ -166,10 +165,8 @@ class Model(LightningModule):
 
         if self.loss_name == 'cross_entropy':
             loss = self.loss_fn(outputs, labels)
-        elif self.loss_name == 'psych_acc': 
-            loss = self.loss_fn(outputs, labels, psych_tensor)
-        else:
-            loss = self.loss_fn(outputs, labels, psych_tensor)
+        elif self.loss_name == 'psych_rt':
+            loss = RtPsychCrossEntropyLoss(outputs, labels, psych_tensor)
 
         # calculate accuracy per class
         labels_hat = torch.argmax(outputs, dim=1)
@@ -211,7 +208,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     metrics_callback = MetricCallback()
-    wandb_logger = WandbLogger(name='sandbox', project="psychophysics_model_search", log_model="all")
+    wandb_logger = WandbLogger(name='sandbox_rt', project="psychophysics_model_search", log_model="all")
 
     trainer = pl.Trainer(
         max_epochs=args.num_epochs,

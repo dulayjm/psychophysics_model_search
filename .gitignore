@@ -7,4 +7,5 @@ __pycache__/
 # logging
 lightning_logs/
 wandb/
-sandbox/
+*sandbox*/
+*wandb_logs*/
