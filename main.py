@@ -74,7 +74,6 @@ class Model(LightningModule):
         self.train_sampler = SubsetRandomSampler(self.train_indices)
         self.val_sampler = SubsetRandomSampler(self.val_indices)
 
-
     def train_dataloader(self):
         return DataLoader(self.dataset, batch_size=self.batch_size, sampler=self.train_sampler)
 
@@ -126,6 +125,9 @@ class Model(LightningModule):
 
         print('train loss is', loss)
         print('train acc is ', train_acc)
+        
+        self.log('train_loss', loss)
+        self.log('train_acc', train_acc)
 
         return {
             'loss': loss,
@@ -176,6 +178,9 @@ class Model(LightningModule):
         print('val loss is', loss)
         print('val acc is ', val_acc)
 
+        self.log('val_loss', loss)
+        self.log('val_acc', val_acc)
+
         return {
             'val_loss': loss,
             'val_acc': val_acc
@@ -206,14 +211,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     metrics_callback = MetricCallback()
-    # wandb_logger = WandbLogger(project="psychophysics_model_search", log_model="all")
+    wandb_logger = WandbLogger(name='sandbox', project="psychophysics_model_search", log_model="all")
 
     trainer = pl.Trainer(
         max_epochs=args.num_epochs,
-        num_sanity_val_steps=2,
+        num_sanity_val_steps=-1,
         gpus=[3] if torch.cuda.is_available() else None,
         callbacks=[metrics_callback],
-        # logger=wandb_logger
+        logger=wandb_logger
     ) 
 
     model_ft = Model()
