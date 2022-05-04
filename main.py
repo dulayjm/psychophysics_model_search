@@ -27,22 +27,17 @@ class MetricCallback(Callback):
     def on_validation_epoch_end(self, trainer, pl_module):
         self.metrics.append(trainer.callback_metrics)
 
-
 class Model(LightningModule):
-    """ Model 
-    """
     def __init__(self, **kwargs):
         super(Model, self).__init__()
 
-        # TODO: refactor these as argparser things
         self.epoch = 0
-        self.learning_rate = 0.015
-        self.batch_size=10
-        self.dropout_rate = 0
-        self.num_classes = 100
-        self.dataset = 'omniglot'
-        self.model_name = 'resnet'
-        self.loss_name = 'cross_entropy'
+        self.learning_rate = args.learning_rate
+        self.batch_size= args.batch_size
+        self.num_classes = args.num_classes
+        self.dataset = args.dataset_file
+        self.model_name = args.model_name
+        self.loss_name = args.loss_fn
                 
         if self.loss_name == 'cross_entropy':
             self.loss_fn=nn.CrossEntropyLoss()
@@ -53,7 +48,6 @@ class Model(LightningModule):
         elif self.model_name == 'ViT':
             # also has a pre-trained version on ImageNet
             self.model = torchvision.models.vision_transformer(pretrained=True)
-
 
     def prepare_data(self):
         train_transform = transforms.Compose([
@@ -117,7 +111,6 @@ class Model(LightningModule):
                 psych_tensor[i] = psych_tensor[i-1]
         psych_tensor = psych_tensor.to(self.device)
 
-
         outputs = self.model(inputs).to(self.device)
 
         if self.loss_name == 'cross_entropy':
@@ -128,22 +121,17 @@ class Model(LightningModule):
             loss = self.loss_fn(outputs, labels, psych_tensor)
 
         # calculate accuracy per class
-        # _, predicted = torch.max(outputs.data, 1)
-        # train_acc = (predicted == labels).sum().item()
-
         labels_hat = torch.argmax(outputs, dim=1)
         train_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
 
         print('train loss is', loss)
         print('train acc is ', train_acc)
 
-
         return {
             'loss': loss,
             'train_acc': train_acc
         }
     
-
     def validation_step(self, batch, batch_idx):
         image1 = batch['image1']
         image2 = batch['image2']
@@ -193,18 +181,35 @@ class Model(LightningModule):
             'val_acc': val_acc
         }
     
-
 if __name__ == '__main__':
-    # create some sort of ablation study
-
-    # TODO: for the trainer, put some nice argparse things in
     # TODO: add working logger
+
+    # args
+    parser = ArgumentParser(description='Training Psych Loss.')
+    parser.add_argument('--num_epochs', type=int, default=25,
+                        help='number of epochs to use')
+    parser.add_argument('--batch_size', type=int, default=10,
+                        help='batch size')
+    parser.add_argument('--num_classes', type=int, default=100,
+                        help='number of classes')
+    parser.add_argument('--learning_rate', type=float, default=0.015, 
+                        help='learning rate')
+    parser.add_argument('--loss_fn', type=str, default='cross_entropy',
+                        help='loss function to use. select: cross_entropy-entropy, psych_rt, psych_acc')
+    parser.add_argument('--model_name', type=str, default='resnet',
+                        help='model architecfture to use.')                
+    parser.add_argument('--dataset_file', type=str, default='small_dataset.csv',
+                        help='dataset file to use. out.csv is the full set')
+    parser.add_argument('--log', type=bool, default=False,
+                        help='log metrics via neptune')
+    
+    args = parser.parse_args()
 
     metrics_callback = MetricCallback()
     # wandb_logger = WandbLogger(project="psychophysics_model_search", log_model="all")
 
     trainer = pl.Trainer(
-        max_epochs=25,
+        max_epochs=args.num_epochs,
         num_sanity_val_steps=2,
         gpus=[3] if torch.cuda.is_available() else None,
         callbacks=[metrics_callback],
