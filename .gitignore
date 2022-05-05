@@ -1,5 +1,7 @@
 # images
 omniglot_realfake/
+tiny-imagenet-200/
+tiny-imagenet-200.zip
 
 # pycache
 __pycache__/
