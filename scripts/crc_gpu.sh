@@ -3,7 +3,7 @@
 #$ -N psychophysics_model_search_debug
 #$ -q gpu
 #S -m abe
-#$ -l gpu=8
+#$ -l gpu=4
 
 BASE_PATH="$HOME/research/psychophysics_model_search" 
 

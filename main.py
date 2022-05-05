@@ -308,12 +308,12 @@ if __name__ == '__main__':
     wandb_logger = None
     if args.log:
         logger_name = "run-{}-{}-{}".format(args.model_name, args.dataset_name, args.seed)
-        wandb_logger = WandbLogger(name='sandbox_loops', project="psychophysics_model_search", log_model="all")
+        wandb_logger = WandbLogger(name='imagenet_trials_01', project="psychophysics_model_search", log_model="all")
 
     trainer = pl.Trainer(
         max_epochs=args.num_epochs,
         num_sanity_val_steps=2,
-        gpus=[3] if torch.cuda.is_available() else None,
+        gpus=[4] if torch.cuda.is_available() else None,
         callbacks=[metrics_callback],
         logger=wandb_logger
     ) 
