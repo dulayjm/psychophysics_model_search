@@ -42,12 +42,18 @@ class Model(LightningModule):
         self.default_loss_fn = nn.CrossEntropyLoss()
 
         # define model - using argparser or someting like tha
-        if self.model_name == 'resnet':
-            self.model = torchvision.models.resnet50(pretrained=True)
-        elif self.model_name == 'ViT':
+        if self.model_name == 'ViT':
             # also has a pre-trained version on ImageNet
             self.model = torchvision.models.vit_b_32(pretrained=True) 
             # temp stuff to work with omniglot set - refactor into a param dict
+        elif self.model_name == 'VGG':
+            self.model = torchvision.models.vgg16(pretrained=True)
+        elif self.model_name == 'googlenet':
+            self.model = torchvision.models.googlenet(pretrained=True)
+        elif self.model_name == 'alexnet':
+            self.model = torchvision.models.alexnet(pretrained=True)
+        else:
+            self.model = torchvision.models.resnet50(pretrained=True)
 
     def generate_dataloader(self, data, name, transform):
         if data is None: 
@@ -189,7 +195,6 @@ class Model(LightningModule):
             labels_hat = torch.argmax(outputs, dim=1)
             train_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
 
-
         else: 
             inputs, labels = batch
             # TODO: change to psych-imagenet datset from lab
@@ -197,10 +202,8 @@ class Model(LightningModule):
             outputs = self.model(inputs)
             loss = self.default_loss_fn(outputs, labels)
 
-
             labels_hat = torch.argmax(outputs, dim=1)
             train_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
-
 
         print('train loss is', loss)
         print('train acc is ', train_acc)
