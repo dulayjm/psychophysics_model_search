@@ -297,13 +297,18 @@ if __name__ == '__main__':
                         help='model architecfture to use.')                
     parser.add_argument('--dataset_name', type=str, default='imagenet',
                         help='dataset file to use. out.csv is the full set')
+    parser.add_argument('--seed', type=int, default=2,
+                        help='seed to use for replication')
     parser.add_argument('--log', type=bool, default=False,
-                        help='log metrics via neptune')
-    
+                        help='log metrics via WandB')
+
     args = parser.parse_args()
 
     metrics_callback = MetricCallback()
-    wandb_logger = WandbLogger(name='sandbox_rt', project="psychophysics_model_search", log_model="all")
+    wandb_logger = None
+    if args.log:
+        logger_name = "run-{}-{}-{}".format(args.model_name, args.dataset_name, args.seed)
+        wandb_logger = WandbLogger(name='sandbox_loops', project="psychophysics_model_search", log_model="all")
 
     trainer = pl.Trainer(
         max_epochs=args.num_epochs,
