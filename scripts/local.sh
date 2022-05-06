@@ -10,6 +10,6 @@ do
     for j in "${seeds[@]}" 
     do
         echo "running on $i on seed imagenet with seed $j"
-        python3 main.py --model_name="$i" --dataset_name="imagenet" --loss_fn="cross_entopy" --seed="$j" --log=True
+        python3 main.py --model_name="$i" --dataset_name="tiny-imagenet-200" --loss_fn="cross_entopy" --seed="$j" --log=False
     done
 done

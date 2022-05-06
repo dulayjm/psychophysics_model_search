@@ -9,13 +9,12 @@ from pytorch_lightning import Callback
 from torch.utils.data.sampler import SubsetRandomSampler
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
 import torchvision
 from torchvision import transforms as T
 
 from pytorch_lightning.loggers import WandbLogger
 
-from dataset import OmniglotReactionTimeDataset
+from dataset import OmniglotReactionTimeDataset, DataModule
 from psychloss import RtPsychCrossEntropyLoss
 
 class MetricCallback(Callback):
@@ -56,101 +55,8 @@ class Model(LightningModule):
             self.model = torchvision.models.resnet50(pretrained=True)
 
         # need to keep in the __init__ class to prevent NotFound errors         
-        DATA_DIR = 'tiny-imagenet-200' # Original images come in shapes of [3,64,64]
-        self.TRAIN_DIR = os.path.join(DATA_DIR, 'train')
-        self.VALID_DIR = os.path.join(DATA_DIR, 'val')
-        self.val_img_dir = os.path.join(self.VALID_DIR, 'images')
 
-        self.preprocess_transform_pretrain = T.Compose([
-                T.Resize(256),
-                T.CenterCrop(224),
-                T.RandomHorizontalFlip(),
-                T.ToTensor(),
-                T.Normalize(mean=[0.485, 0.456, 0.406], 
-                            std=[0.229, 0.224, 0.225])
-            ])
-
-
-
-    def generate_dataloader(self, data, name, transform):
-        if data is None: 
-            return None
-        
-        # Read image files to pytorch dataset using ImageFolder, a generic data 
-        # loader where images are in format root/label/filename
-        # See https://pytorch.org/vision/stable/datasets.html
-        if transform is None:
-            dataset = torchvision.datasets.ImageFolder(data, transform=T.ToTensor())
-        else:
-            dataset = torchvision.datasets.ImageFolder(data, transform=transform)
-
-        
-        # Wrap image dataset (defined above) in dataloader 
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, 
-                            shuffle=(name=="train"))
-        
-        return dataloader
-
-    def prepare_data(self):
-        if self.dataset_name == 'imagenet':
-
-            # Open and read val annotations text file
-            fp = open(os.path.join(self.VALID_DIR, 'val_annotations.txt'), 'r')
-            data = fp.readlines()
-
-            # Create dictionary to store img filename (word 0) and corresponding
-            # label (word 1) for every line in the txt file (as key value pair)
-            val_img_dict = {}
-            for line in data:
-                words = line.split('\t')
-                val_img_dict[words[0]] = words[1]
-            fp.close()
-
-            for img, folder in val_img_dict.items():
-                newpath = (os.path.join(self.val_img_dir, folder))
-                if not os.path.exists(newpath):
-                    os.makedirs(newpath)
-                if os.path.exists(os.path.join(self.val_img_dir, img)):
-                    os.rename(os.path.join(self.val_img_dir, img), os.path.join(newpath, img))
-
-        else: 
-            train_transform = T.Compose([
-                            # T.Resize(32, padding=0),
-                            T.Grayscale(num_output_channels=3),
-                            T.RandomHorizontalFlip(),
-                            T.ToTensor(),
-                            ])
-            self.dataset = OmniglotReactionTimeDataset('small_dataset.csv', 
-                        transforms=train_transform)
-
-            test_split = .2
-            shuffle_dataset = True
-
-            dataset_size = len(self.dataset)
-            indices = list(range(dataset_size))
-            split = int(np.floor(test_split * dataset_size))
-
-            if shuffle_dataset:
-                np.random.seed(2)
-                np.random.shuffle(indices)
-            self.train_indices, self.val_indices = indices[split:], indices[:split]
-
-            self.train_sampler = SubsetRandomSampler(self.train_indices)
-            self.val_sampler = SubsetRandomSampler(self.val_indices)
-
-    def train_dataloader(self):
-        if self.dataset_name == 'imagenet':
-            return self.generate_dataloader(self.TRAIN_DIR, "train",
-                                  transform=self.preprocess_transform_pretrain)
-        else: 
-            return DataLoader(self.dataset, batch_size=self.batch_size, sampler=self.train_sampler)
-
-    def val_dataloader(self):
-        if self.dataset_name == 'imagenet':
-            return self.generate_dataloader(self.val_img_dir, "val",
-                                  transform=self.preprocess_transform_pretrain)
-        else:
-            return DataLoader(self.dataset, batch_size=self.batch_size, sampler=self.val_sampler)
+    
     
     def configure_optimizers(self):
         return torch.optim.SGD(self.parameters(), lr=self.learning_rate)
@@ -260,6 +166,7 @@ class Model(LightningModule):
             val_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
 
         else: 
+            print("DEBUG: the batch is: ", batch)
             inputs, labels = batch
             # TODO: change to psych-imagenet datset from lab
 
@@ -295,7 +202,7 @@ if __name__ == '__main__':
                         help='loss function to use. select: cross_entropy-entropy, psych_rt, psych_acc')
     parser.add_argument('--model_name', type=str, default='resnet',
                         help='model architecfture to use.')                
-    parser.add_argument('--dataset_name', type=str, default='imagenet',
+    parser.add_argument('--dataset_name', type=str, default='timy-imagenet-200',
                         help='dataset file to use. out.csv is the full set')
     parser.add_argument('--seed', type=int, default=2,
                         help='seed to use for replication')
@@ -319,5 +226,7 @@ if __name__ == '__main__':
     ) 
 
     model_ft = Model()
+    data_module = DataModule(data_dir=args.dataset_name, batch_size=args.batch_size)
 
-    trainer.fit(model_ft)
+
+    trainer.fit(model_ft, data_module)

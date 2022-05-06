@@ -1,11 +1,8 @@
-wandb
 matplotlib
-neptune-client
 numpy
-optuna
 pandas
 Pillow
 pytorch-lightning
-scikit-image
 torch
 torchvision
+wandb
