@@ -11,3 +11,7 @@ lightning_logs/
 wandb/
 *sandbox*/
 *wandb_logs*/
+psychophysics*
+
+# env
+nas_env/

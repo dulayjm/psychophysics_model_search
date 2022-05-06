@@ -7,6 +7,10 @@
 
 BASE_PATH="$HOME/research/psychophysics_model_search" 
 
+module load python
+source nas_env/bin/activate
+pip install -r requirements.txt
+
 declare -a model_names=("VGG" "googlenet" "alexnet" "resnet")
 declare -a seeds=(2 3 5 8 13)
 

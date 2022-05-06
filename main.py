@@ -55,6 +55,23 @@ class Model(LightningModule):
         else:
             self.model = torchvision.models.resnet50(pretrained=True)
 
+        # need to keep in the __init__ class to prevent NotFound errors         
+        DATA_DIR = 'tiny-imagenet-200' # Original images come in shapes of [3,64,64]
+        self.TRAIN_DIR = os.path.join(DATA_DIR, 'train')
+        self.VALID_DIR = os.path.join(DATA_DIR, 'val')
+        self.val_img_dir = os.path.join(self.VALID_DIR, 'images')
+
+        self.preprocess_transform_pretrain = T.Compose([
+                T.Resize(256),
+                T.CenterCrop(224),
+                T.RandomHorizontalFlip(),
+                T.ToTensor(),
+                T.Normalize(mean=[0.485, 0.456, 0.406], 
+                            std=[0.229, 0.224, 0.225])
+            ])
+
+
+
     def generate_dataloader(self, data, name, transform):
         if data is None: 
             return None
@@ -76,25 +93,9 @@ class Model(LightningModule):
 
     def prepare_data(self):
         if self.dataset_name == 'imagenet':
-            DATA_DIR = 'tiny-imagenet-200' # Original images come in shapes of [3,64,64]
-
-            # Define training and validation data paths
-            self.TRAIN_DIR = os.path.join(DATA_DIR, 'train') 
-            VALID_DIR = os.path.join(DATA_DIR, 'val')
-
-
-            self.preprocess_transform_pretrain = T.Compose([
-                            T.Resize(256), # Resize images to 256 x 256
-                            T.CenterCrop(224), # Center crop image
-                            T.RandomHorizontalFlip(),
-                            T.ToTensor(),  # Converting cropped images to tensors
-                            T.Normalize(mean=[0.485, 0.456, 0.406], 
-                                        std=[0.229, 0.224, 0.225])
-            ])
-            self.val_img_dir = os.path.join(VALID_DIR, 'images')
 
             # Open and read val annotations text file
-            fp = open(os.path.join(VALID_DIR, 'val_annotations.txt'), 'r')
+            fp = open(os.path.join(self.VALID_DIR, 'val_annotations.txt'), 'r')
             data = fp.readlines()
 
             # Create dictionary to store img filename (word 0) and corresponding
@@ -104,7 +105,6 @@ class Model(LightningModule):
                 words = line.split('\t')
                 val_img_dict[words[0]] = words[1]
             fp.close()
-
 
             for img, folder in val_img_dict.items():
                 newpath = (os.path.join(self.val_img_dir, folder))
@@ -307,13 +307,13 @@ if __name__ == '__main__':
     metrics_callback = MetricCallback()
     wandb_logger = None
     if args.log:
-        logger_name = "run-{}-{}-{}".format(args.model_name, args.dataset_name, args.seed)
-        wandb_logger = WandbLogger(name='imagenet_trials_01', project="psychophysics_model_search", log_model="all")
+        logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, args.seed)
+        wandb_logger = WandbLogger(name=logger_name, project="psychophysics_model_search", log_model="all")
 
     trainer = pl.Trainer(
         max_epochs=args.num_epochs,
         num_sanity_val_steps=2,
-        gpus=[4] if torch.cuda.is_available() else None,
+        gpus=[0,1,2,3] if torch.cuda.is_available() else None,
         callbacks=[metrics_callback],
         logger=wandb_logger
     ) 
