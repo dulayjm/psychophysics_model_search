@@ -197,17 +197,18 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    metrics_callback = MetricCallback()
 
     # 5 seed runs for trials on this data
     for seed_idx in range(1, 6):
         random_seed = seed_idx ** 3
         seed_everything(random_seed, workers=True)
 
+        metrics_callback = MetricCallback()
+
         wandb_logger = None
         if args.log:
             logger_name = "{}-{}-{}-tinyimagenet".format(args.model_name, args.dataset_name, random_seed)
-            wandb_logger = WandbLogger(name=logger_name, project="psychophysics_model_search_01", log_model="all")
+            wandb_logger = WandbLogger(name=logger_name, project="psychophysics_model_search_02", log_model="all")
 
         trainer = pl.Trainer(
             max_epochs=args.num_epochs,
@@ -224,3 +225,6 @@ if __name__ == '__main__':
         data_module = DataModule(data_dir=args.dataset_name, batch_size=args.batch_size)
 
         trainer.fit(model_ft, data_module)
+
+        save_name = "{}seed-{}-{}-tinyimagenet.pth".format(random_seed, args.model_name, args.dataset_name)
+        trainer.save_checkpoint(save_name)
