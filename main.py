@@ -5,7 +5,7 @@ import numpy as np
 import os
 import pytorch_lightning as pl
 from pytorch_lightning.core.lightning import LightningModule
-from pytorch_lightning import Callback
+from pytorch_lightning import Callback, seed_everything
 from torch.utils.data.sampler import SubsetRandomSampler
 import torch
 from torch import nn
@@ -37,7 +37,6 @@ class Model(LightningModule):
         self.model_name = args.model_name
         self.loss_name = args.loss_fn
 
-        # if self.loss_name == 'cross_entropy':
         self.default_loss_fn = nn.CrossEntropyLoss()
 
         # define model - using argparser or someting like tha
@@ -54,10 +53,6 @@ class Model(LightningModule):
         else:
             self.model = torchvision.models.resnet50(pretrained=True)
 
-        # need to keep in the __init__ class to prevent NotFound errors         
-
-    
-    
     def configure_optimizers(self):
         return torch.optim.SGD(self.parameters(), lr=self.learning_rate)
 
@@ -111,8 +106,6 @@ class Model(LightningModule):
             labels_hat = torch.argmax(outputs, dim=1)
             train_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
 
-        print('train loss is', loss)
-        print('train acc is ', train_acc)
         
         self.log('train_loss', loss)
         self.log('train_acc', train_acc)
@@ -158,7 +151,6 @@ class Model(LightningModule):
             if self.loss_name == 'psych_rt':
                 loss = RtPsychCrossEntropyLoss(outputs, labels, psych_tensor)
             else:
-                print('sanity here')
                 loss = self.default_loss_fn(outputs, labels)
 
             # calculate accuracy per class
@@ -166,7 +158,6 @@ class Model(LightningModule):
             val_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
 
         else: 
-            print("DEBUG: the batch is: ", batch)
             inputs, labels = batch
             # TODO: change to psych-imagenet datset from lab
 
@@ -175,9 +166,6 @@ class Model(LightningModule):
 
             labels_hat = torch.argmax(outputs, dim=1)
             val_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
-
-        print('val loss is', loss)
-        print('val acc is ', val_acc)
 
         self.log('val_loss', loss)
         self.log('val_acc', val_acc)
@@ -204,29 +192,35 @@ if __name__ == '__main__':
                         help='model architecfture to use.')                
     parser.add_argument('--dataset_name', type=str, default='timy-imagenet-200',
                         help='dataset file to use. out.csv is the full set')
-    parser.add_argument('--seed', type=int, default=2,
-                        help='seed to use for replication')
     parser.add_argument('--log', type=bool, default=False,
                         help='log metrics via WandB')
 
     args = parser.parse_args()
 
     metrics_callback = MetricCallback()
-    wandb_logger = None
-    if args.log:
-        logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, args.seed)
-        wandb_logger = WandbLogger(name=logger_name, project="psychophysics_model_search", log_model="all")
 
-    trainer = pl.Trainer(
-        max_epochs=args.num_epochs,
-        num_sanity_val_steps=2,
-        gpus=[0,1,2,3] if torch.cuda.is_available() else None,
-        callbacks=[metrics_callback],
-        logger=wandb_logger
-    ) 
+    # 5 seed runs for trials on this data
+    for seed_idx in range(1, 6):
+        random_seed = seed_idx ** 3
+        seed_everything(random_seed, workers=True)
 
-    model_ft = Model()
-    data_module = DataModule(data_dir=args.dataset_name, batch_size=args.batch_size)
+        wandb_logger = None
+        if args.log:
+            logger_name = "{}-{}-{}-tinyimagenet".format(args.model_name, args.dataset_name, random_seed)
+            wandb_logger = WandbLogger(name=logger_name, project="psychophysics_model_search_01", log_model="all")
 
+        trainer = pl.Trainer(
+            max_epochs=args.num_epochs,
+            num_sanity_val_steps=2,
+            # gpus=[0,1,2,3] if torch.cuda.is_available() else None,
+            accelerator="gpu" if torch.cuda.is_available() else "cpu",
+            devices=4,
+            auto_select_gpus=True,
+            callbacks=[metrics_callback],
+            logger=wandb_logger
+        ) 
 
-    trainer.fit(model_ft, data_module)
+        model_ft = Model()
+        data_module = DataModule(data_dir=args.dataset_name, batch_size=args.batch_size)
+
+        trainer.fit(model_ft, data_module)
