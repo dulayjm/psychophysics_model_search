@@ -9,10 +9,10 @@ warnings.filterwarnings("ignore")
 # from args import arg_parser
 import torch.nn as nn
 from datetime import datetime
-from pipeline_util import train_valid_test_one_epoch, \
+from utils.pipeline_util import train_valid_test_one_epoch, \
     save_probs_and_features, find_best_model, \
     train_valid_test_one_epoch_for_known, update_thresholds
-from args import arg_parser
+from utils.args import arg_parser
 
 args = arg_parser.parse_args()
 

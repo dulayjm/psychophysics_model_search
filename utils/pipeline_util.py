@@ -121,7 +121,7 @@ def train_valid_test_one_epoch_for_known(args,
 
             # Convert into PyTorch tensor
             input_var = torch.autograd.Variable(input).cuda()
-            target = target.cuda(async=True)
+            target = target.cuda(True)
             target_var = torch.autograd.Variable(target).long()
 
 

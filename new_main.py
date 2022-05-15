@@ -27,8 +27,6 @@ known_thresholds = [0.0035834426525980234, 0.0035834424197673798,
 unknown_thresholds = [0.0035834426525980234, 0.0035834424197673798,
                       0.0035834426525980234, 0.0035834424197673798, 0.0035834424197673798]
 
-# TODO: factor these out into some non-changing constants file 
-
 # use_performance_loss = False
 # use_exit_loss = True
 
@@ -137,11 +135,8 @@ class Model(LightningModule):
             train_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
 
         else: 
-            #TODO do the training step function that they do
-            # likewise only care about top@1 and such 
-
             # this is a setting, but we probably don't need it 
-            
+
             # if i in rt_indices:
             #     batch = next(rt_iter)
 
@@ -151,6 +146,25 @@ class Model(LightningModule):
             #     except:
             #         continue
 
+            input = batch["imgs"]
+            rts = batch["rts"]
+            target = batch["labels"]
+            input_var = torch.autograd.Variable(input)
+            target_var = torch.autograd.Variable(target).long()
+
+            print('shape of the input is:', input_var.shape)
+            print('shape of the target is:', target.shape)
+
+            # TODO: The model expects the rts and handles them in a custom way 
+            # 1 - handle them with our custom loss instead 
+            # 2 - later, try them with the MSDensenet, too
+
+            # output, feature, end_time = self.model(input_var)
+            output = self.model(input_var)
+            loss = self.default_loss_fn(outputs, labels)
+
+            labels_hat = torch.argmax(outputs, dim=1)
+            train_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
 
             print('hehe')
 
@@ -206,7 +220,7 @@ class Model(LightningModule):
             labels_hat = torch.argmax(outputs, dim=1)
             val_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
 
-        else: 
+        elif self.dataset_mame == 'tiny-imagenet-200': 
             inputs, labels = batch
             # TODO: change to psych-imagenet datset from lab
 
@@ -215,6 +229,40 @@ class Model(LightningModule):
 
             labels_hat = torch.argmax(outputs, dim=1)
             val_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
+
+        else: 
+            # this is a setting, but we probably don't need it 
+
+            # if i in rt_indices:
+            #     batch = next(rt_iter)
+
+            # elif i in no_rt_indices:
+            #     try:
+            #         batch = next(no_rt_iter)
+            #     except:
+            #         continue
+
+            input = batch["imgs"]
+            rts = batch["rts"]
+            target = batch["labels"]
+            input_var = torch.autograd.Variable(input)
+            target_var = torch.autograd.Variable(target).long()
+
+            print('shape of the input is:', input_var.shape)
+            print('shape of the target is:', target.shape)
+
+            # TODO: The model expects the rts and handles them in a custom way 
+            # 1 - handle them with our custom loss instead 
+            # 2 - later, try them with the MSDensenet, too
+
+            # output, feature, end_time = self.model(input_var)
+            output = self.model(input_var)
+            loss = self.default_loss_fn(outputs, labels)
+
+            labels_hat = torch.argmax(outputs, dim=1)
+            val_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
+
+            print('hehe')
 
         self.log('val_loss', loss)
         self.log('val_acc', val_acc)
