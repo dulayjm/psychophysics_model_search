@@ -19,6 +19,7 @@ from psychloss import RtPsychCrossEntropyLoss
 
 #####################################
 # constants
+# TODO: these might need to be updated overtime ...
 known_exit_rt = [3.5720, 4.9740, 7.0156, 11.6010, 27.5720]
 unknown_exit_rt = [4.2550, 5.9220, 8.2368, 13.0090, 28.1661]
 

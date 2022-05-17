@@ -179,6 +179,8 @@ unknown_thresholds = [0.0035834426525980234, 0.0035834424197673798,
             # Define paths for saving model and data source #
 #########################################################################################
 # Normally, no need to change these
+# /scratch365/jhuang24/dataset_v1_3_partition/train_valid
+
 json_data_base_debug = "/afs/crc.nd.edu/user/j/jhuang24/scratch_22/open_set/" \
                        "data/object_recognition/image_net/derivatives/" \
                        "dataset_v1_3_partition/npy_json_files/2021_02_old"

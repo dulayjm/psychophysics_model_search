@@ -32,6 +32,9 @@ from tqdm import tqdm
 
 from timeit import default_timer as timer
 
+# *** DATASET is located at ***
+# /scratch365/jhuang24/dataset_v1_3_partition/train_valid
+
 class OmniglotReactionTimeDataset(Dataset):
     """
     Dataset for omniglot + reaction time data
@@ -91,7 +94,6 @@ class DataModule(pl.LightningDataModule):
             self.val_img_dir = os.path.join(self.VALID_DIR, 'images')
             self.batch_size = batch_size
 
-
             self.transform = T.Compose([
                     T.Resize(256),
                     T.CenterCrop(224),
@@ -101,8 +103,11 @@ class DataModule(pl.LightningDataModule):
                                 std=[0.229, 0.224, 0.225])
                 ])
 
+        elif data_dir == 'psych-rt':
+            pass
+
         else: 
-            save_path_base = "/afs/crc.nd.edu/user/j/jdulay/"
+            save_path_base = "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search"
 
             use_performance_loss = False
             use_exit_loss = True
@@ -114,23 +119,20 @@ class DataModule(pl.LightningDataModule):
             save_path_sub = "known_only_cross_entropy_" + str(cross_entropy_weight) + \
                             "_pfm_" + str(perform_loss_weight)
 
-            json_data_base = "/afs/crc.nd.edu/user/j/jhuang24/scratch_51/open_set/data/" \
-                            "dataset_v1_3_partition/npy_json_files_shuffled/"
+            # json_data_base = "/afs/crc.nd.edu/user/j/jhuang24/scratch_51/open_set/data/" \
+            #                 "dataset_v1_3_partition/npy_json_files_shuffled/"
 
-            save_path_with_date = save_path_base # refacotr later
+            json_data_base = '/scratch365/jhuang24/dataset_v1_3_partition/npy_json_files_shuffled'
+
+            save_path_with_date = save_path_base # refactor later
 
             use_json_data = True
             save_training_prob = False
-
-
 
             # cherry-picked
             self.train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known_with_rt.json")
             self.valid_known_known_with_rt_path = os.path.join(json_data_base, "valid_known_known_with_rt.json")
             self.test_known_known_with_rt_path = os.path.join(json_data_base, "test_known_known_with_rt.json")
-
-
-
 
 
     def prepare_data(self):
