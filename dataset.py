@@ -87,6 +87,7 @@ class DataModule(pl.LightningDataModule):
         super().__init__()
         self.data_dir = data_dir
 
+        self.batch_size = batch_size
         # DATA_DIR = 'tiny-imagenet-200' # Original images come in shapes of [3,64,64]
         if data_dir == 'tiny-imagenet-200':
             self.TRAIN_DIR = os.path.join(data_dir, 'train')
@@ -107,24 +108,24 @@ class DataModule(pl.LightningDataModule):
             pass
 
         else: 
-            save_path_base = "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search"
+            # save_path_base = "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search"
 
-            use_performance_loss = False
-            use_exit_loss = True
+            # use_performance_loss = False
+            # use_exit_loss = True
 
             cross_entropy_weight = 1.0
             perform_loss_weight = 1.0
             exit_loss_weight = 1.0
 
-            save_path_sub = "known_only_cross_entropy_" + str(cross_entropy_weight) + \
-                            "_pfm_" + str(perform_loss_weight)
+            # save_path_sub = "known_only_cross_entropy_" + str(cross_entropy_weight) + \
+            #                "_pfm_" + str(perform_loss_weight)
 
-            # json_data_base = "/afs/crc.nd.edu/user/j/jhuang24/scratch_51/open_set/data/" \
-            #                 "dataset_v1_3_partition/npy_json_files_shuffled/"
 
-            json_data_base = '/scratch365/jhuang24/dataset_v1_3_partition/npy_json_files_shuffled'
+            json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
 
-            save_path_with_date = save_path_base # refactor later
+
+            print('DEBUG the path is here', json_data_base)
+
 
             use_json_data = True
             save_training_prob = False
@@ -132,7 +133,7 @@ class DataModule(pl.LightningDataModule):
             # cherry-picked
             self.train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known_with_rt.json")
             self.valid_known_known_with_rt_path = os.path.join(json_data_base, "valid_known_known_with_rt.json")
-            self.test_known_known_with_rt_path = os.path.join(json_data_base, "test_known_known_with_rt.json")
+            # self.test_known_known_with_rt_path = os.path.join(json_data_base, "test_known_known_with_rt.json")
 
 
     def prepare_data(self):

@@ -14,7 +14,7 @@ from torchvision import transforms as T
 
 from pytorch_lightning.loggers import WandbLogger
 
-from dataset import OmniglotReactionTimeDataset, DataModule, msd_net_dataset, save_probs_and_features
+from dataset import OmniglotReactionTimeDataset, DataModule, msd_net_dataset
 from psychloss import RtPsychCrossEntropyLoss
 
 #####################################
@@ -305,7 +305,7 @@ if __name__ == '__main__':
 
         wandb_logger = None
         if args.log:
-            logger_name = "{}-{}-{}-tinyimagenet".format(args.model_name, args.dataset_name, random_seed)
+            logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, random_seed)
             wandb_logger = WandbLogger(name=logger_name, project="psychophysics_model_search_02", log_model="all")
 
         trainer = pl.Trainer(
@@ -363,5 +363,5 @@ if __name__ == '__main__':
 
         trainer.fit(model_ft, data_module)
 
-        save_name = "{}seed-{}-{}-tinyimagenet.pth".format(random_seed, args.model_name, args.dataset_name)
+        save_name = "{}seed-{}-{}-imagenet.pth".format(random_seed, args.model_name, args.dataset_name)
         trainer.save_checkpoint(save_name)
