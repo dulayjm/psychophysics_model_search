@@ -125,7 +125,7 @@ class Model(LightningModule):
             labels_hat = torch.argmax(outputs, dim=1)
             train_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
 
-        elif self.dataset_mame == 'tiny-imagenet-200': 
+        elif self.dataset_name == 'tiny-imagenet-200': 
             inputs, labels = batch
             # TODO: change to psych-imagenet datset from lab
 
@@ -147,6 +147,7 @@ class Model(LightningModule):
             #     except:
             #         continue
 
+            # print('batch is here:', batch)
             input = batch["imgs"]
             rts = batch["rts"]
             target = batch["labels"]
@@ -161,11 +162,11 @@ class Model(LightningModule):
             # 2 - later, try them with the MSDensenet, too
 
             # output, feature, end_time = self.model(input_var)
-            output = self.model(input_var)
-            loss = self.default_loss_fn(outputs, labels)
+            outputs = self.model(input_var)
+            loss = self.default_loss_fn(outputs, target_var)
 
             labels_hat = torch.argmax(outputs, dim=1)
-            train_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
+            train_acc = torch.sum(target_var.data == labels_hat).item() / (len(target_var) * 1.0)
 
             print('hehe')
 
@@ -221,7 +222,7 @@ class Model(LightningModule):
             labels_hat = torch.argmax(outputs, dim=1)
             val_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
 
-        elif self.dataset_mame == 'tiny-imagenet-200': 
+        elif self.dataset_name == 'tiny-imagenet-200': 
             inputs, labels = batch
             # TODO: change to psych-imagenet datset from lab
 
@@ -257,11 +258,14 @@ class Model(LightningModule):
             # 2 - later, try them with the MSDensenet, too
 
             # output, feature, end_time = self.model(input_var)
-            output = self.model(input_var)
-            loss = self.default_loss_fn(outputs, labels)
+            
+            # see where are files compare here ..
+
+            outputs = self.model(input_var)
+            loss = self.default_loss_fn(outputs, target_var)
 
             labels_hat = torch.argmax(outputs, dim=1)
-            val_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
+            val_acc = torch.sum(target_var.data == labels_hat).item() / (len(target_var) * 1.0)
 
             print('hehe')
 

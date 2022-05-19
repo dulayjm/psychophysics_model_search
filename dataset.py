@@ -192,8 +192,7 @@ class DataModule(pl.LightningDataModule):
             train_transform = T.Compose([T.RandomResizedCrop(224),
                                                 T.RandomHorizontalFlip(),
                                                 T.ToTensor(),
-                                                normalize])
-
+                                                normalize]) 
             valid_transform = train_transform
 
             test_transform = T.Compose([T.Resize(256),
@@ -259,7 +258,7 @@ class DataModule(pl.LightningDataModule):
         return dataloader
 
 
-    def collate(batch):
+    def collate(self, batch):
         try:
             PADDING_CONSTANT = 0
 
