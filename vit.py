@@ -94,7 +94,7 @@ class msd_net_dataset(Dataset):
 
         return {
             "img": img,
-            "gt_label": item["label"],
+            "label": item["label"],
             "rt": rt,
             "category": item["category"]
         }
@@ -248,7 +248,7 @@ if __name__ == '__main__':
 
 
     model = ViTLightningModule()
-    trainer = pl.Trainer(max_epochs=20, gpus=-1, callbacks=[metrics_callback])
+    trainer = pl.Trainer(max_epochs=20, gpus=-1 if torch.cuda.is_available() else None, progress_bar_refresh_rate=0, auto_select_gpus=True, callbacks=[metrics_callback])
     trainer.fit(model)
 
     print('here2')

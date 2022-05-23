@@ -1,0 +1,84 @@
+Some weights of the model checkpoint at google/vit-base-patch16-224-in21k were not used when initializing ViTForImageClassification: ['pooler.dense.bias', 'pooler.dense.weight']
+- This IS expected if you are initializing ViTForImageClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing ViTForImageClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of ViTForImageClassification were not initialized from the model checkpoint at google/vit-base-patch16-224-in21k and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/trainer/connectors/callback_connector.py:91: LightningDeprecationWarning: Setting `Trainer(progress_bar_refresh_rate=0)` is deprecated in v1.5 and will be removed in v1.7. Please pass `pytorch_lightning.callbacks.progress.TQDMProgressBar` with `refresh_rate` directly to the Trainer's `callbacks` argument instead. Or, to disable the progress bar pass `enable_progress_bar = False` to the Trainer.
+  f"Setting `Trainer(progress_bar_refresh_rate={progress_bar_refresh_rate})` is deprecated in v1.5 and"
+GPU available: True, used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [1]
+/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/transformers/optimization.py:309: FutureWarning: This implementation of AdamW is deprecated and will be removed in a future version. Use the PyTorch implementation torch.optim.AdamW instead, or set `no_deprecation_warning=True` to disable this warning
+  FutureWarning,
+
+  | Name | Type                      | Params
+---------------------------------------------------
+0 | vit  | ViTForImageClassification | 85.8 M
+---------------------------------------------------
+85.8 M    Trainable params
+0         Non-trainable params
+85.8 M    Total params
+343.201   Total estimated model params size (MB)
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [0,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [1,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [2,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [3,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [4,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [5,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [6,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [7,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [8,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [9,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [10,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [11,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [12,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [13,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [14,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/pytorch/aten/src/ATen/native/cuda/Loss.cu:247: nll_loss_forward_reduce_cuda_kernel_2d: block: [0,0,0], thread: [15,0,0] Assertion `t >= 0 && t < n_classes` failed.
+/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/trainer/data_loading.py:133: UserWarning: The dataloader, val_dataloader 0, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 24 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  f"The dataloader, {name}, does not have many workers which may be a bottleneck."
+here0
+here1
+Traceback (most recent call last):
+  File "vit.py", line 252, in <module>
+    trainer.fit(model)
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/trainer/trainer.py", line 741, in fit
+    self._fit_impl, model, train_dataloaders, val_dataloaders, datamodule, ckpt_path
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/trainer/trainer.py", line 685, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/trainer/trainer.py", line 777, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/trainer/trainer.py", line 1199, in _run
+    self._dispatch()
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/trainer/trainer.py", line 1279, in _dispatch
+    self.training_type_plugin.start_training(self)
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/plugins/training_type/training_type_plugin.py", line 202, in start_training
+    self._results = trainer.run_stage()
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/trainer/trainer.py", line 1289, in run_stage
+    return self._run_train()
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/trainer/trainer.py", line 1311, in _run_train
+    self._run_sanity_check(self.lightning_module)
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/trainer/trainer.py", line 1375, in _run_sanity_check
+    self._evaluation_loop.run()
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/loops/base.py", line 145, in run
+    self.advance(*args, **kwargs)
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/loops/dataloader/evaluation_loop.py", line 110, in advance
+    dl_outputs = self.epoch_loop.run(dataloader, dataloader_idx, dl_max_batches, self.num_dataloaders)
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/loops/base.py", line 145, in run
+    self.advance(*args, **kwargs)
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/loops/epoch/evaluation_epoch_loop.py", line 122, in advance
+    output = self._evaluation_step(batch, batch_idx, dataloader_idx)
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/loops/epoch/evaluation_epoch_loop.py", line 217, in _evaluation_step
+    output = self.trainer.accelerator.validation_step(step_kwargs)
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/accelerators/accelerator.py", line 239, in validation_step
+    return self.training_type_plugin.validation_step(*step_kwargs.values())
+  File "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search/nas_env/lib64/python3.6/site-packages/pytorch_lightning/plugins/training_type/training_type_plugin.py", line 219, in validation_step
+    return self.model.validation_step(*args, **kwargs)
+  File "vit.py", line 141, in validation_step
+    loss, accuracy = self.common_step(batch, batch_idx)     
+  File "vit.py", line 126, in common_step
+    correct = (predictions == labels).sum().item()
+RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call,so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
