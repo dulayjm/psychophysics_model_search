@@ -220,9 +220,37 @@ class ViTLightningModule(pl.LightningModule):
 
 
 if __name__ == '__name__':
+    # args
+    parser = ArgumentParser(description='Neural Architecture Search for Psychophysics')
+    parser.add_argument('--num_epochs', type=int, default=25,
+                        help='number of epochs to use')
+    parser.add_argument('--batch_size', type=int, default=64,
+                        help='batch size')
+    parser.add_argument('--num_classes', type=int, default=100,
+                        help='number of classes')
+    parser.add_argument('--learning_rate', type=float, default=0.015, 
+                        help='learning rate')
+    parser.add_argument('--loss_fn', type=str, default='cross_entropy',
+                        help='loss function to use. select: cross_entropy-entropy, psych_rt, psych_acc')
+    parser.add_argument('--model_name', type=str, default='resnet',
+                        help='model architecfture to use.')                
+    parser.add_argument('--dataset_name', type=str, default='timy-imagenet-200',
+                        help='dataset file to use. out.csv is the full set')
+    parser.add_argument('--log', type=bool, default=False,
+                        help='log metrics via WandB')
 
+    args = parser.parse_args()
+
+    wandb_logger = None
+    if args.log:
+        logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, 'DEBUG')
+        wandb_logger = WandbLogger(name=logger_name, project="ViT-DEBUG", log_model="all")
+    
+    metrics_callback = MetricCallback()
 
     model = ViTLightningModule()
-    metrics_callback = MetricCallback()
     trainer = pl.Trainer(max_epochs=20, gpus=-1, callbacks=[metrics_callback])
+
     trainer.fit(model)
+    save_name = "{}seed-{}-{}-imagenet.pth".format('DEBUG', args.model_name, args.dataset_name)
+    trainer.save_checkpoint(save_name)
