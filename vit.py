@@ -106,6 +106,7 @@ class ViTLightningModule(pl.LightningModule):
     def __init__(self):
         super(ViTLightningModule, self).__init__()
         self.vit = ViTForImageClassification.from_pretrained('google/vit-base-patch16-224-in21k')
+        self.criterion = nn.CrossEntropyLoss()
         #   num_labels=10,
         #   id2label=id2label,
         #   label2id=label2id
@@ -120,9 +121,9 @@ class ViTLightningModule(pl.LightningModule):
         labels = batch['label']
         logits = self(pixel_values)
 
-        criterion = nn.CrossEntropyLoss()
-        loss = criterion(logits, labels)
+        loss = self.criterion(logits, labels)
         predictions = logits.argmax(-1)
+        print('debug here')
         correct = (predictions == labels).sum().item()
         accuracy = correct/pixel_values.shape[0]
 
