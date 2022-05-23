@@ -3,18 +3,24 @@ import torch
 
 # reaction time psychophysical loss
 def RtPsychCrossEntropyLoss(outputs, targets, psych):
+    print('in psych loss')
+    print(type(targets))
+    print(type(outputs))
     num_examples = targets.shape[0]
-    batch_size = outputs.shape[0]
+    print('the outputs are', outputs)
+    batch_size = outputs.size[0]
 
     # converting reaction time to penalty
     # 10002 is close to the max penalty time seen in the data
     for idx in range(len(psych)):   
-        psych[idx] = abs(10002 - psych[idx])
+        psych[idx] = abs(28 - psych[idx]) 
+        # seems to be in terms of 10 for now,
+        # will fix later
 
     # adding penalty to each of the output logits 
     for i in range(len(outputs)):
-        val = psych[i] / 300
-        if np.isnan(val.cpu()):
+        val = psych[i] / 30
+        if np.isnan(val):
             val = 0 
             
         outputs[i] += val 
