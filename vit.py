@@ -161,7 +161,7 @@ class ViTLightningModule(pl.LightningModule):
         return val_dataloader
 
 
-if __name__ == '__name__':
+if __name__ == '__main__':
     # args
     parser = ArgumentParser(description='Neural Architecture Search for Psychophysics')
     parser.add_argument('--num_epochs', type=int, default=25,
