@@ -121,43 +121,7 @@ from torchvision.transforms import (CenterCrop,
                                     Resize, 
                                     ToTensor)
 
-normalize = Normalize(mean=feature_extractor.image_mean, std=feature_extractor.image_std)
-train_transforms = Compose(
-        [
-            RandomResizedCrop(feature_extractor.size),
-            RandomHorizontalFlip(),
-            ToTensor(),
-            normalize,
-        ]
-    )
 
-val_transforms = Compose(
-        [
-            Resize(feature_extractor.size),
-            CenterCrop(feature_extractor.size),
-            ToTensor(),
-            normalize,
-        ]
-    )
-
-
-train_known_known_with_rt_dataset = msd_net_dataset(json_path=train_known_known_with_rt_path,
-                                                        transform=train_transforms)
-
-# and this one hehe
-valid_known_known_with_rt_dataset = msd_net_dataset(json_path=valid_known_known_with_rt_path,
-                                                        transform=val_transforms) 
-
-# def collate_fn(examples):
-#     pixel_values = torch.stack([example["pixel_values"] for example in examples])
-#     labels = torch.tensor([example["label"] for example in examples])
-#     return {"pixel_values": pixel_values, "labels": labels}
-
-train_batch_size = 16
-eval_batch_size = 16
-
-train_dataloader = DataLoader(train_known_known_with_rt_dataset, shuffle=True, batch_size=train_batch_size)
-val_dataloader = DataLoader(valid_known_known_with_rt_dataset, batch_size=eval_batch_size)
 
 
 class ViTLightningModule(pl.LightningModule):
@@ -248,9 +212,49 @@ if __name__ == '__name__':
     
     metrics_callback = MetricCallback()
 
+    print('here1')
+    normalize = Normalize(mean=feature_extractor.image_mean, std=feature_extractor.image_std)
+    train_transforms = Compose(
+            [
+                RandomResizedCrop(feature_extractor.size),
+                RandomHorizontalFlip(),
+                ToTensor(),
+                normalize,
+            ]
+        )
+
+    val_transforms = Compose(
+            [
+                Resize(feature_extractor.size),
+                CenterCrop(feature_extractor.size),
+                ToTensor(),
+                normalize,
+            ]
+        )
+
+
+    train_known_known_with_rt_dataset = msd_net_dataset(json_path=train_known_known_with_rt_path,
+                                                            transform=train_transforms)
+
+    # and this one hehe
+    valid_known_known_with_rt_dataset = msd_net_dataset(json_path=valid_known_known_with_rt_path,
+                                                            transform=val_transforms) 
+
+    # def collate_fn(examples):
+    #     pixel_values = torch.stack([example["pixel_values"] for example in examples])
+    #     labels = torch.tensor([example["label"] for example in examples])
+    #     return {"pixel_values": pixel_values, "labels": labels}
+
+    train_batch_size = 16
+    eval_batch_size = 16
+
+    train_dataloader = DataLoader(train_known_known_with_rt_dataset, shuffle=True, batch_size=train_batch_size)
+    val_dataloader = DataLoader(valid_known_known_with_rt_dataset, batch_size=eval_batch_size)
+
     model = ViTLightningModule()
     trainer = pl.Trainer(max_epochs=20, gpus=-1, callbacks=[metrics_callback])
-
     trainer.fit(model)
+
+    print('here2')
     save_name = "{}seed-{}-{}-imagenet.pth".format('DEBUG', args.model_name, args.dataset_name)
     trainer.save_checkpoint(save_name)
