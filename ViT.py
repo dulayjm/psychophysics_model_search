@@ -10,22 +10,27 @@ from pytorch_lightning import Callback, seed_everything
 from torch.utils.data.sampler import SubsetRandomSampler
 import torch
 import torchvision
-from torchvision import transforms as T
 from torch.utils.data import DataLoader, Dataset
 
 import json
 
-
 from pytorch_lightning.loggers import WandbLogger
 
-from dataset import OmniglotReactionTimeDataset, DataModule, msd_net_dataset
 from psychloss import RtPsychCrossEntropyLoss
 
 from transformers import ViTForImageClassification, AdamW
 import torch.nn as nn
 
 from PIL import Image
+from transformers import ViTFeatureExtractor
 
+from torchvision.transforms import (CenterCrop, 
+                                    Compose, 
+                                    Normalize, 
+                                    RandomHorizontalFlip,
+                                    RandomResizedCrop, 
+                                    Resize, 
+                                    ToTensor)
 
 # ad-hoc dataset additions, for now 
 # also, just with tiny-imagenet-for now
@@ -93,33 +98,6 @@ class msd_net_dataset(Dataset):
             "rt": rt,
             "category": item["category"]
         }
-
-
-batch_size = 16
-
-json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
-
-
-# cherry-picked
-train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known_with_rt.json")
-valid_known_known_with_rt_path = os.path.join(json_data_base, "valid_known_known_with_rt.json")
-
-
-
-
-
-
-from transformers import ViTFeatureExtractor
-
-feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224-in21k")
-
-from torchvision.transforms import (CenterCrop, 
-                                    Compose, 
-                                    Normalize, 
-                                    RandomHorizontalFlip,
-                                    RandomResizedCrop, 
-                                    Resize, 
-                                    ToTensor)
 
 
 
@@ -205,12 +183,26 @@ if __name__ == '__name__':
 
     args = parser.parse_args()
 
+    print('here0')
+
     wandb_logger = None
     if args.log:
         logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, 'DEBUG')
         wandb_logger = WandbLogger(name=logger_name, project="ViT-DEBUG", log_model="all")
     
     metrics_callback = MetricCallback()
+
+
+
+    batch_size = 16
+
+    json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
+
+    train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known_with_rt.json")
+    valid_known_known_with_rt_path = os.path.join(json_data_base, "valid_known_known_with_rt.json")
+
+    feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224-in21k")
+
 
     print('here1')
     normalize = Normalize(mean=feature_extractor.image_mean, std=feature_extractor.image_std)
@@ -250,6 +242,10 @@ if __name__ == '__name__':
 
     train_dataloader = DataLoader(train_known_known_with_rt_dataset, shuffle=True, batch_size=train_batch_size)
     val_dataloader = DataLoader(valid_known_known_with_rt_dataset, batch_size=eval_batch_size)
+
+
+
+
 
     model = ViTLightningModule()
     trainer = pl.Trainer(max_epochs=20, gpus=-1, callbacks=[metrics_callback])
