@@ -12,6 +12,7 @@ wandb/
 *sandbox*/
 *wandb_logs*/
 psychophysics*
+vit_imagenet*
 
 # env
 nas_env/

@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+# import timm
+from transformers import ViTConfig, ViTModel 
 from argparse import ArgumentParser
 import numpy as np
 import os
@@ -70,9 +72,8 @@ class Model(LightningModule):
 
         # define model - using argparser or someting like tha
         if self.model_name == 'ViT':
-            # also has a pre-trained version on ImageNet
-            self.model = torchvision.models.vit_b_32(pretrained=True) 
-            # temp stuff to work with omniglot set - refactor into a param dict
+            configuration = ViTConfig(return_dict=False) # you can edit model params
+            self.model = ViTModel(configuration)
         elif self.model_name == 'VGG':
             self.model = torchvision.models.vgg16(pretrained=True)
         elif self.model_name == 'googlenet':
@@ -135,7 +136,9 @@ class Model(LightningModule):
             labels_hat = torch.argmax(outputs, dim=1)
             train_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
 
-        else: 
+        else:
+            # Jin's imagenet-modified dataset
+
             # this is a setting, but we probably don't need it 
 
             # if i in rt_indices:
@@ -154,8 +157,8 @@ class Model(LightningModule):
             input_var = torch.autograd.Variable(input)
             target_var = torch.autograd.Variable(target).long()
 
-            print('shape of the input is:', input_var.shape)
-            print('shape of the target is:', target.shape)
+            # print('shape of the input is:', input_var.shape)
+            # print('shape of the target is:', target.shape)
 
             # TODO: The model expects the rts and handles them in a custom way 
             # 1 - handle them with our custom loss instead 
@@ -163,13 +166,15 @@ class Model(LightningModule):
 
             # output, feature, end_time = self.model(input_var)
             outputs = self.model(input_var)
-            loss = self.default_loss_fn(outputs, target_var)
+            print('outputs are', outputs)
 
+            if self.loss_name == 'cross_entropy':
+                loss = self.default_loss_fn(outputs, target_var)
+            else:
+                # psych loss
+                loss = RtPsychCrossEntropyLoss(outputs, target_var, rts)
             labels_hat = torch.argmax(outputs, dim=1)
             train_acc = torch.sum(target_var.data == labels_hat).item() / (len(target_var) * 1.0)
-
-            print('hehe')
-
 
 
         self.log('train_loss', loss)
@@ -250,8 +255,8 @@ class Model(LightningModule):
             input_var = torch.autograd.Variable(input)
             target_var = torch.autograd.Variable(target).long()
 
-            print('shape of the input is:', input_var.shape)
-            print('shape of the target is:', target.shape)
+            # print('shape of the input is:', input_var.shape)
+            # print('shape of the target is:', target.shape)
 
             # TODO: The model expects the rts and handles them in a custom way 
             # 1 - handle them with our custom loss instead 
@@ -261,13 +266,22 @@ class Model(LightningModule):
             
             # see where are files compare here ..
 
+            
             outputs = self.model(input_var)
-            loss = self.default_loss_fn(outputs, target_var)
+            outputs = outputs[1]
+            print('outputs shape is', outputs.shape)
+            print('outputs are', outputs)
+
+            
+            if self.loss_name == 'cross_entropy':
+                loss = self.default_loss_fn(outputs, target_var)
+            else:
+                # psych loss
+                loss = RtPsychCrossEntropyLoss(outputs, target_var, rts)
+
 
             labels_hat = torch.argmax(outputs, dim=1)
             val_acc = torch.sum(target_var.data == labels_hat).item() / (len(target_var) * 1.0)
-
-            print('hehe')
 
         self.log('val_loss', loss)
         self.log('val_acc', val_acc)
@@ -310,17 +324,16 @@ if __name__ == '__main__':
         wandb_logger = None
         if args.log:
             logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, random_seed)
-            wandb_logger = WandbLogger(name=logger_name, project="psychophysics_model_search_02", log_model="all")
+            wandb_logger = WandbLogger(name=logger_name, project="psychophysics_model_search_05", log_model="all")
 
         trainer = pl.Trainer(
             max_epochs=args.num_epochs,
             num_sanity_val_steps=2,
-            # gpus=[0,1,2,3] if torch.cuda.is_available() else None,
-            accelerator="gpu" if torch.cuda.is_available() else "cpu",
-            devices=4,
+            gpus=-1 if torch.cuda.is_available() else None,
             auto_select_gpus=True,
             callbacks=[metrics_callback],
-            logger=wandb_logger
+            logger=wandb_logger,
+            progress_bar_refresh_rate=0
         ) 
 
         model_ft = Model()

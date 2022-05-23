@@ -28,7 +28,7 @@ import sys
 import random
 
 import math
-from tqdm import tqdm
+# from tqdm import tqdm
 
 from timeit import default_timer as timer
 
@@ -96,8 +96,7 @@ class DataModule(pl.LightningDataModule):
             self.batch_size = batch_size
 
             self.transform = T.Compose([
-                    T.Resize(256),
-                    T.CenterCrop(224),
+                    T.Resize(224),
                     T.RandomHorizontalFlip(),
                     T.ToTensor(),
                     T.Normalize(mean=[0.485, 0.456, 0.406], 
@@ -124,7 +123,7 @@ class DataModule(pl.LightningDataModule):
             json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
 
 
-            print('DEBUG the path is here', json_data_base)
+            #/print('DEBUG the path is here', json_data_base)
 
 
             use_json_data = True
@@ -189,14 +188,12 @@ class DataModule(pl.LightningDataModule):
             normalize = T.Normalize(mean=[0.485, 0.456, 0.406],
                                     std=[0.229, 0.224, 0.225])
 
-            train_transform = T.Compose([T.RandomResizedCrop(224),
-                                                T.RandomHorizontalFlip(),
+            train_transform = T.Compose([T.Resize((224,224), interpolation=3),
                                                 T.ToTensor(),
                                                 normalize]) 
             valid_transform = train_transform
 
-            test_transform = T.Compose([T.Resize(256),
-                                                T.CenterCrop(224),
+            test_transform = T.Compose([T.CenterCrop(224),
                                                 T.ToTensor(),
                                                 normalize])
 
@@ -218,8 +215,8 @@ class DataModule(pl.LightningDataModule):
         else: 
             return DataLoader(self.train_known_known_with_rt_dataset,
                                                 batch_size=self.batch_size,
-                                                shuffle=False,
-                                                drop_last=True,
+                                                shuffle=True,
+                                                drop_last=False,
                                                 collate_fn=self.collate
                                                 )
 
@@ -233,8 +230,8 @@ class DataModule(pl.LightningDataModule):
         else: 
             return DataLoader(self.valid_known_known_with_rt_dataset,
                                                 batch_size=self.batch_size,
-                                                shuffle=False,
-                                                drop_last=True,
+                                                shuffle=True,
+                                                drop_last=False,
                                                 collate_fn=self.collate
                                                 )
     # helper function for tiny class
@@ -265,8 +262,8 @@ class DataModule(pl.LightningDataModule):
             batch = [b for b in batch if b is not None]
 
             #These all should be the same size or error
-            assert len(set([b["img"].shape[0] for b in batch])) == 1
-            assert len(set([b["img"].shape[2] for b in batch])) == 1
+            #assert len(set([b["img"].shape[0] for b in batch])) == 1
+            #assert len(set([b["img"].shape[2] for b in batch])) == 1
 
             # TODO: what is dim 0, 1, 2??
             """
@@ -275,9 +272,14 @@ class DataModule(pl.LightningDataModule):
             dim2: hight?
             """
             dim0 = batch[0]["img"].shape[0]
+            # print('dim0 is :', dim0)
             dim1 = max([b["img"].shape[1] for b in batch])
             dim1 = dim1 + (dim0 - (dim1 % dim0))
+            dim1 = 224 # hardcoding
+            # print('dim1 is :', dim1)
             dim2 = batch[0]["img"].shape[2]
+            dim2 = 224 # hardcoding
+            # print('dim2 is :', dim2)
 
             # print(batch)
 
@@ -322,7 +324,7 @@ class msd_net_dataset(Dataset):
 
         with open(json_path) as f:
             data = json.load(f)
-        print("Json file loaded: %s" % json_path)
+        #print("Json file loaded: %s" % json_path)
 
         self.img_height = img_height
         self.data = data
@@ -334,36 +336,25 @@ class msd_net_dataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        try:
-            item = self.data[str(idx)]
+        item = self.data[str(idx)]
             # print("@" * 20)
             # print(idx)
-        except KeyError:
-            item = self.data[str(idx+1)]
 
         # Open the image and do normalization and augmentation
         img = Image.open(item["img_path"])
         img = img.convert('RGB')
-        # print(img.size)
         # print(item["img_path"])
         # print(item["label"])
-        try:
-            img = self.transform(img)
+        # print(img.size) 
+        # print('type of the image before transform: ', type(img))
+        img = self.transform(img)
 
-        except Exception as e:
-            print("@" * 20)
-            print(e)
-            print("@" * 20)
-            print(idx)
-            print(self.data[str(idx)])
-            sys.exit(0)
 
         # Deal with reaction times
         if self.random_weight is None:
             # print("Checking whether an RT exists for this image...")
             if item["RT"] != None:
                 rt = item["RT"]
-                # print("RT exists")
             else:
                 # print("RT does not exist")
                 rt = None
