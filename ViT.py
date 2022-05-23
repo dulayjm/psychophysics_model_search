@@ -105,12 +105,6 @@ train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known
 valid_known_known_with_rt_path = os.path.join(json_data_base, "valid_known_known_with_rt.json")
 
 
-train_known_known_with_rt_dataset = msd_net_dataset(json_path=train_known_known_with_rt_path,
-                                                        transform=None)
-
-# and this one hehe
-valid_known_known_with_rt_dataset = msd_net_dataset(json_path=valid_known_known_with_rt_path,
-                                                        transform=None) 
 
 
 
@@ -128,7 +122,7 @@ from torchvision.transforms import (CenterCrop,
                                     ToTensor)
 
 normalize = Normalize(mean=feature_extractor.image_mean, std=feature_extractor.image_std)
-_train_transforms = Compose(
+train_transforms = Compose(
         [
             RandomResizedCrop(feature_extractor.size),
             RandomHorizontalFlip(),
@@ -137,7 +131,7 @@ _train_transforms = Compose(
         ]
     )
 
-_val_transforms = Compose(
+val_transforms = Compose(
         [
             Resize(feature_extractor.size),
             CenterCrop(feature_extractor.size),
@@ -146,31 +140,24 @@ _val_transforms = Compose(
         ]
     )
 
-# not sure if examples is supposed to have a pixel_values field, but we shall see 
-def train_transforms(examples):
-    examples['pixel_values'] = [_train_transforms(image.convert("RGB")) for image in examples['img']]
-    return examples
 
-def val_transforms(examples):
-    examples['pixel_values'] = [_val_transforms(image.convert("RGB")) for image in examples['img']]
-    return examples
+train_known_known_with_rt_dataset = msd_net_dataset(json_path=train_known_known_with_rt_path,
+                                                        transform=train_transforms)
 
+# and this one hehe
+valid_known_known_with_rt_dataset = msd_net_dataset(json_path=valid_known_known_with_rt_path,
+                                                        transform=val_transforms) 
 
-train_known_known_with_rt_dataset.set_transform(train_transforms)
-valid_known_known_with_rt_dataset.set_transform(val_transforms)
+# def collate_fn(examples):
+#     pixel_values = torch.stack([example["pixel_values"] for example in examples])
+#     labels = torch.tensor([example["label"] for example in examples])
+#     return {"pixel_values": pixel_values, "labels": labels}
 
+train_batch_size = 16
+eval_batch_size = 16
 
-def collate_fn(examples):
-    pixel_values = torch.stack([example["pixel_values"] for example in examples])
-    labels = torch.tensor([example["label"] for example in examples])
-    return {"pixel_values": pixel_values, "labels": labels}
-
-train_batch_size = 2
-eval_batch_size = 2
-
-train_dataloader = DataLoader(train_known_known_with_rt_dataset, shuffle=True, collate_fn=collate_fn, batch_size=train_batch_size)
-val_dataloader = DataLoader(valid_known_known_with_rt_dataset, collate_fn=collate_fn, batch_size=eval_batch_size)
-
+train_dataloader = DataLoader(train_known_known_with_rt_dataset, shuffle=True, batch_size=train_batch_size)
+val_dataloader = DataLoader(valid_known_known_with_rt_dataset, batch_size=eval_batch_size)
 
 
 class ViTLightningModule(pl.LightningModule):
@@ -184,10 +171,11 @@ class ViTLightningModule(pl.LightningModule):
     def forward(self, pixel_values):
         outputs = self.vit(pixel_values=pixel_values)
         return outputs.logits
-        
+
     def common_step(self, batch, batch_idx):
-        pixel_values = batch['pixel_values']
-        labels = batch['labels']
+        # TODO: implement w RT 
+        pixel_values = batch['img']
+        labels = batch['label']
         logits = self(pixel_values)
 
         criterion = nn.CrossEntropyLoss()
