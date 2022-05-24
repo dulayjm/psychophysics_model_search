@@ -174,7 +174,7 @@ class ViTLightningModule(pl.LightningModule):
             loss = RtPsychCrossEntropyLoss(logits, labels, rts)
         else:
             loss = self.criterion(logits, labels)
-            
+
         predictions = logits.argmax(-1)
         #print('debug here')
         correct = (predictions == labels).sum().item()
@@ -231,6 +231,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    seed_everything(3, workers=True)
+
     wandb_logger = None
     if args.log:
         logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, 'DEBUG')
@@ -245,6 +247,8 @@ if __name__ == '__main__':
     trainer = pl.Trainer(
         max_epochs=20, 
         gpus=-1 if torch.cuda.is_available() else None, 
+        num_nodes=4,
+        accelerator='ddp',
         auto_select_gpus=True, 
         logger=wandb_logger,
         callbacks=[metrics_callback],
