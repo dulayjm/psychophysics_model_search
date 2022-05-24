@@ -32,6 +32,8 @@ from torchvision.transforms import (CenterCrop,
                                     Resize, 
                                     ToTensor)
 
+from psychloss import RtPsychCrossEntropyLoss
+
 # setup the data _ad-hoc_ first, for the imagenet style stuff 
 class MetricCallback(Callback):
     def __init__(self):
@@ -41,11 +43,12 @@ class MetricCallback(Callback):
     def on_validation_epoch_end(self, trainer, pl_module):
         self.metrics.append(trainer.callback_metrics)
 
-# TODO: modify this here heheh
 def collate_fn(examples):
     pixel_values = torch.stack([example["img"] for example in examples])
     labels = torch.tensor([example["label"] for example in examples])
-    return {"img": pixel_values, "label": labels}
+    rt = torch.tensor([example["rt"] for example in examples])
+
+    return {"img": pixel_values, "label": labels, "rt": rt}
 
 
 class CustomDataModule(pl.LightningDataModule):
@@ -165,8 +168,13 @@ class ViTLightningModule(pl.LightningModule):
         #print('lbaels,', labels.shape, labels)
         logits = self(pixel_values)
         #print('logits', logits.shape, logits)
+        rts = batch['rt']
 
-        loss = self.criterion(logits, labels)
+        if args.loss_fn == 'psych':
+            loss = RtPsychCrossEntropyLoss(logits, labels, rts)
+        else:
+            loss = self.criterion(logits, labels)
+            
         predictions = logits.argmax(-1)
         #print('debug here')
         correct = (predictions == labels).sum().item()
