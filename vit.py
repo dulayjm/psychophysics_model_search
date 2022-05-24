@@ -32,10 +32,6 @@ from torchvision.transforms import (CenterCrop,
                                     Resize, 
                                     ToTensor)
 
-# ad-hoc dataset additions, for now 
-# also, just with tiny-imagenet-for now
-# then we can edit everything on the server 
-
 # setup the data _ad-hoc_ first, for the imagenet style stuff 
 class MetricCallback(Callback):
     def __init__(self):
@@ -45,21 +41,71 @@ class MetricCallback(Callback):
     def on_validation_epoch_end(self, trainer, pl_module):
         self.metrics.append(trainer.callback_metrics)
 
+# TODO: modify this here heheh
+def collate_fn(examples):
+    pixel_values = torch.stack([example["img"] for example in examples])
+    labels = torch.tensor([example["label"] for example in examples])
+    return {"img": pixel_values, "label": labels}
+
+
+class CustomDataModule(pl.LightningDataModule):
+    def __init__(self):
+        batch_size = 16
+
+        json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
+
+        self.train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known_with_rt.json")
+        self.valid_known_known_with_rt_path = os.path.join(json_data_base, "valid_known_known_with_rt.json")
+
+        self.feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224-in21k")
+
+    def prepare_data(self):
+        normalize = Normalize(mean=self.feature_extractor.image_mean, std=self.feature_extractor.image_std)
+        train_transforms = Compose(
+                [
+                    RandomResizedCrop(self.feature_extractor.size),
+                    RandomHorizontalFlip(),
+                    ToTensor(),
+                    normalize,
+                ]
+            )
+
+        val_transforms = Compose(
+                [
+                    Resize(self.feature_extractor.size),
+                    CenterCrop(self.feature_extractor.size),
+                    ToTensor(),
+                    normalize,
+                ]
+            )
+
+        self.train_known_known_with_rt_dataset = msd_net_dataset(json_path=self.train_known_known_with_rt_path,
+                                                                transform=train_transforms)
+
+        # and this one hehe
+        self.valid_known_known_with_rt_dataset = msd_net_dataset(json_path=self.valid_known_known_with_rt_path,
+                                                                transform=val_transforms) 
+
+    def train_dataloader(self):
+        train_dataloader = DataLoader(self.train_known_known_with_rt_dataset, batch_size=16, collate_fn=collate_fn)
+        return train_dataloader
+        
+    def val_dataloader(self):
+        val_dataloader = DataLoader(self.valid_known_known_with_rt_dataset, batch_size=16, collate_fn=collate_fn)
+        return val_dataloader
+
+
 class msd_net_dataset(Dataset):
     def __init__(self,
                  json_path,
-                 transform,
-                 img_height=32,
-                 augmentation=False):
+                 transform):
 
         with open(json_path) as f:
             data = json.load(f)
         #print("Json file loaded: %s" % json_path)
 
-        self.img_height = img_height
         self.data = data
         self.transform = transform
-        self.augmentation = augmentation
         self.random_weight = None
 
     def __len__(self):
@@ -67,8 +113,6 @@ class msd_net_dataset(Dataset):
 
     def __getitem__(self, idx):
         item = self.data[str(idx)]
-            # print("@" * 20)
-            # print(idx)
 
         # Open the image and do normalization and augmentation
         img = Image.open(item["img_path"])
@@ -78,7 +122,6 @@ class msd_net_dataset(Dataset):
         # print(img.size) 
         # print('type of the image before transform: ', type(img))
         img = self.transform(img)
-
 
         # Deal with reaction times
         if self.random_weight is None:
@@ -98,9 +141,6 @@ class msd_net_dataset(Dataset):
             "rt": rt,
             "category": item["category"]
         }
-
-
-
 
 class ViTLightningModule(pl.LightningModule):
     def __init__(self):
@@ -155,12 +195,6 @@ class ViTLightningModule(pl.LightningModule):
         # not require weight_decay but just using AdamW out-of-the-box works fine
         return AdamW(self.parameters(), lr=5e-5)
 
-    def train_dataloader(self):
-        return train_dataloader
-
-    def val_dataloader(self):
-        return val_dataloader
-
 
 if __name__ == '__main__':
     # args
@@ -184,8 +218,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    print('here0')
-
     wandb_logger = None
     if args.log:
         logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, 'DEBUG')
@@ -193,65 +225,19 @@ if __name__ == '__main__':
     
     metrics_callback = MetricCallback()
 
-
-
-    batch_size = 16
-
-    json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
-
-    train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known_with_rt.json")
-    valid_known_known_with_rt_path = os.path.join(json_data_base, "valid_known_known_with_rt.json")
-
-    feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224-in21k")
-
-
-    print('here1')
-    normalize = Normalize(mean=feature_extractor.image_mean, std=feature_extractor.image_std)
-    train_transforms = Compose(
-            [
-                RandomResizedCrop(feature_extractor.size),
-                RandomHorizontalFlip(),
-                ToTensor(),
-                normalize,
-            ]
-        )
-
-    val_transforms = Compose(
-            [
-                Resize(feature_extractor.size),
-                CenterCrop(feature_extractor.size),
-                ToTensor(),
-                normalize,
-            ]
-        )
-
-
-    train_known_known_with_rt_dataset = msd_net_dataset(json_path=train_known_known_with_rt_path,
-                                                            transform=train_transforms)
-
-    # and this one hehe
-    valid_known_known_with_rt_dataset = msd_net_dataset(json_path=valid_known_known_with_rt_path,
-                                                            transform=val_transforms) 
-
-    # def collate_fn(examples):
-    #     pixel_values = torch.stack([example["pixel_values"] for example in examples])
-    #     labels = torch.tensor([example["label"] for example in examples])
-    #     return {"pixel_values": pixel_values, "labels": labels}
-
-    train_batch_size = 16
-    eval_batch_size = 16
-
-    train_dataloader = DataLoader(train_known_known_with_rt_dataset, shuffle=True, batch_size=train_batch_size)
-    val_dataloader = DataLoader(valid_known_known_with_rt_dataset, batch_size=eval_batch_size)
-
-
-
-
-
+    # because all of this fits in a data module
+    
+    datamodule = CustomDataModule()
     model = ViTLightningModule()
-    trainer = pl.Trainer(max_epochs=20, gpus=-1 if torch.cuda.is_available() else None, progress_bar_refresh_rate=0, auto_select_gpus=True, callbacks=[metrics_callback])
-    trainer.fit(model)
+    trainer = pl.Trainer(
+        max_epochs=20, 
+        gpus=-1 if torch.cuda.is_available() else None, 
+        progress_bar_refresh_rate=0, 
+        auto_select_gpus=True, 
+        callbacks=[metrics_callback]
+    )
 
-    print('here2')
+    trainer.fit(model, datamodule)
+
     save_name = "{}seed-{}-{}-imagenet.pth".format('DEBUG', args.model_name, args.dataset_name)
     trainer.save_checkpoint(save_name)
