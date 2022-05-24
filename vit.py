@@ -50,8 +50,8 @@ def collate_fn(examples):
 
 class CustomDataModule(pl.LightningDataModule):
     def __init__(self):
-        batch_size = 16
-
+        batch_size = 2
+        self.num_labels = 1000
         json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
 
         self.train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known_with_rt.json")
@@ -87,11 +87,11 @@ class CustomDataModule(pl.LightningDataModule):
                                                                 transform=val_transforms) 
 
     def train_dataloader(self):
-        train_dataloader = DataLoader(self.train_known_known_with_rt_dataset, batch_size=16, collate_fn=collate_fn)
+        train_dataloader = DataLoader(self.train_known_known_with_rt_dataset, batch_size=2, collate_fn=collate_fn)
         return train_dataloader
         
     def val_dataloader(self):
-        val_dataloader = DataLoader(self.valid_known_known_with_rt_dataset, batch_size=16, collate_fn=collate_fn)
+        val_dataloader = DataLoader(self.valid_known_known_with_rt_dataset, batch_size=2, collate_fn=collate_fn)
         return val_dataloader
 
 
@@ -145,7 +145,8 @@ class msd_net_dataset(Dataset):
 class ViTLightningModule(pl.LightningModule):
     def __init__(self):
         super(ViTLightningModule, self).__init__()
-        self.vit = ViTForImageClassification.from_pretrained('google/vit-base-patch16-224-in21k')
+        self.vit = ViTForImageClassification.from_pretrained('google/vit-base-patch16-224-in21k', num_labels=1000)
+        self.num_labels=10000
         self.criterion = nn.CrossEntropyLoss()
         #   num_labels=10,
         #   id2label=id2label,
@@ -157,13 +158,17 @@ class ViTLightningModule(pl.LightningModule):
 
     def common_step(self, batch, batch_idx):
         # TODO: implement w RT 
+        #print('beginning of common step')
         pixel_values = batch['img']
+        #print('pixel_values', pixel_values.shape, pixel_values)
         labels = batch['label']
+        #print('lbaels,', labels.shape, labels)
         logits = self(pixel_values)
+        #print('logits', logits.shape, logits)
 
         loss = self.criterion(logits, labels)
         predictions = logits.argmax(-1)
-        print('debug here')
+        #print('debug here')
         correct = (predictions == labels).sum().item()
         accuracy = correct/pixel_values.shape[0]
 
