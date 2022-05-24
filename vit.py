@@ -62,7 +62,6 @@ class CustomDataModule(pl.LightningDataModule):
 
         self.feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224-in21k")
 
-    def prepare_data(self):
         normalize = Normalize(mean=self.feature_extractor.image_mean, std=self.feature_extractor.image_std)
         train_transforms = Compose(
                 [
@@ -133,7 +132,7 @@ class msd_net_dataset(Dataset):
                 rt = item["RT"]
             else:
                 # print("RT does not exist")
-                rt = None
+                rt = 0 # for now 
         # No random weights for reaction time
         else:
             pass
@@ -241,14 +240,14 @@ if __name__ == '__main__':
     metrics_callback = MetricCallback()
 
     # because all of this fits in a data module
-    
     datamodule = CustomDataModule()
     model = ViTLightningModule()
     trainer = pl.Trainer(
         max_epochs=20, 
-        gpus=-1 if torch.cuda.is_available() else None, 
+        devices=4, 
         num_nodes=4,
-        accelerator='ddp',
+        accelerator='gpu',
+        strategy='ddp',
         auto_select_gpus=True, 
         logger=wandb_logger,
         callbacks=[metrics_callback],
