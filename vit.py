@@ -50,7 +50,7 @@ def collate_fn(examples):
 
 class CustomDataModule(pl.LightningDataModule):
     def __init__(self):
-        batch_size = 2
+        batch_size = 16
         self.num_labels = 1000
         json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
 
@@ -87,11 +87,11 @@ class CustomDataModule(pl.LightningDataModule):
                                                                 transform=val_transforms) 
 
     def train_dataloader(self):
-        train_dataloader = DataLoader(self.train_known_known_with_rt_dataset, batch_size=2, collate_fn=collate_fn)
+        train_dataloader = DataLoader(self.train_known_known_with_rt_dataset, batch_size=16, collate_fn=collate_fn)
         return train_dataloader
         
     def val_dataloader(self):
-        val_dataloader = DataLoader(self.valid_known_known_with_rt_dataset, batch_size=2, collate_fn=collate_fn)
+        val_dataloader = DataLoader(self.valid_known_known_with_rt_dataset, batch_size=16, collate_fn=collate_fn)
         return val_dataloader
 
 
@@ -206,9 +206,9 @@ if __name__ == '__main__':
     parser = ArgumentParser(description='Neural Architecture Search for Psychophysics')
     parser.add_argument('--num_epochs', type=int, default=25,
                         help='number of epochs to use')
-    parser.add_argument('--batch_size', type=int, default=64,
+    parser.add_argument('--batch_size', type=int, default=16,
                         help='batch size')
-    parser.add_argument('--num_classes', type=int, default=100,
+    parser.add_argument('--num_classes', type=int, default=1000,
                         help='number of classes')
     parser.add_argument('--learning_rate', type=float, default=0.015, 
                         help='learning rate')
@@ -237,9 +237,10 @@ if __name__ == '__main__':
     trainer = pl.Trainer(
         max_epochs=20, 
         gpus=-1 if torch.cuda.is_available() else None, 
-        progress_bar_refresh_rate=0, 
         auto_select_gpus=True, 
-        callbacks=[metrics_callback]
+        logger=wandb_logger,
+        callbacks=[metrics_callback],
+        progress_bar_refresh_rate=0
     )
 
     trainer.fit(model, datamodule)

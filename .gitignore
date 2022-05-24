@@ -14,6 +14,8 @@ wandb/
 psychophysics*
 vit_imagenet*
 wanb/
+vit_debug*
+ViT-imagenet-DEBUG-imagenet/
 
 # env
 nas_env/
