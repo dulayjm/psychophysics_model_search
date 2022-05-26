@@ -16,7 +16,7 @@ from torchvision import transforms as T
 
 from pytorch_lightning.loggers import WandbLogger
 
-from dataset import OmniglotReactionTimeDataset, DataModule, msd_net_dataset
+from dataset import  DataModule, msd_net_dataset
 from psychloss import RtPsychCrossEntropyLoss
 
 #####################################
@@ -315,8 +315,12 @@ if __name__ == '__main__':
 
 
     # 5 seed runs for trials on this data
-    for seed_idx in range(1, 6):
+    for seed_idx in range(1, 2):
         random_seed = seed_idx ** 3
+
+        path = '/afa/crc.nd.edu/user/j/jdulay/.cache/'
+        if os.path.isdir(path):
+            os.rmdir(path)
         seed_everything(random_seed, workers=True)
 
         metrics_callback = MetricCallback()
@@ -324,12 +328,13 @@ if __name__ == '__main__':
         wandb_logger = None
         if args.log:
             logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, random_seed)
-            wandb_logger = WandbLogger(name=logger_name, project="psychophysics_model_search_05", log_model="all")
+            wandb_logger = WandbLogger(name=logger_name,project="psychophysics_model_search_07", log_model="all")
 
         trainer = pl.Trainer(
             max_epochs=args.num_epochs,
             num_sanity_val_steps=2,
-            gpus=-1 if torch.cuda.is_available() else None,
+            gpus=4 if torch.cuda.is_available() else None,
+            strategy='ddp',
             auto_select_gpus=True,
             callbacks=[metrics_callback],
             logger=wandb_logger,
@@ -379,6 +384,9 @@ if __name__ == '__main__':
         data_module = DataModule(data_dir=args.dataset_name, batch_size=args.batch_size)
 
         trainer.fit(model_ft, data_module)
-
+        if os.path.isdir(path):
+            os.rmdir(path)
         save_name = "{}seed-{}-{}-imagenet.pth".format(random_seed, args.model_name, args.dataset_name)
         trainer.save_checkpoint(save_name)
+        if os.path.isdir(path):
+            os.rmdir(path)

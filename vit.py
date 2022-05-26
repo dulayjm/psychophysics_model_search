@@ -235,9 +235,15 @@ if __name__ == '__main__':
     wandb_logger = None
     if args.log:
         logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, 'DEBUG')
-        wandb_logger = WandbLogger(name=logger_name, project="ViT-DEBUG", log_model="all")
+        wandb_logger = WandbLogger(name=logger_name, project="psychophysics_model_search_07")
     
     metrics_callback = MetricCallback()
+
+    path = '/afa/crc.nd.edu/user/j/jdulay/.cache/'
+    if os.path.isdir(path):
+        os.rmdir(path)
+
+
 
     # because all of this fits in a data module
     datamodule = CustomDataModule()
@@ -245,7 +251,6 @@ if __name__ == '__main__':
     trainer = pl.Trainer(
         max_epochs=20, 
         devices=4, 
-        num_nodes=4,
         accelerator='gpu',
         strategy='ddp',
         auto_select_gpus=True, 
@@ -255,6 +260,13 @@ if __name__ == '__main__':
     )
 
     trainer.fit(model, datamodule)
+    
+
+    if os.path.isdir(path):
+        os.rmdir(path)
 
     save_name = "{}seed-{}-{}-imagenet.pth".format('DEBUG', args.model_name, args.dataset_name)
     trainer.save_checkpoint(save_name)
+    
+    if os.path.isdir(path):
+        os.rmdir(path)

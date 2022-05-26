@@ -15,7 +15,13 @@ psychophysics*
 vit_imagenet*
 wanb/
 vit_debug*
+vit_*
 ViT-imagenet-DEBUG-imagenet/
+
+# models
+*.pth
+
+imagenet*
 
 # env
 nas_env/

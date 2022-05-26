@@ -14,4 +14,5 @@ BASE_PATH="$HOME/research/psychophysics_model_search"
 source nas_env/bin/activate
 # pip3 install -r requirements.txt
 
-python3 vit.py --model_name="ViT" --dataset_name="imagenet" --loss_fn="pscyh" --log=True --batch_size=16
+rm -rf ~/.cache/
+python3 vit.py --model_name="ViT" --dataset_name="imagenet" --loss_fn="pscyh" --log=False --batch_size=16

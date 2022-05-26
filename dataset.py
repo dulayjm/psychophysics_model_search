@@ -32,189 +32,42 @@ import math
 
 from timeit import default_timer as timer
 
-# *** DATASET is located at ***
-# /scratch365/jhuang24/dataset_v1_3_partition/train_valid
-
-class OmniglotReactionTimeDataset(Dataset):
-    """
-    Dataset for omniglot + reaction time data
-
-    Dasaset Structure:
-    label1, label2, real_file, generated_file, reaction time
-    ...
-
-    args:
-    - path: string - path to dataset (should be a csv file)
-    - transforms: torchvision.transforms - transforms on the data
-    """
-
-    def __init__(self, data_file, transforms=None):
-        self.raw_data = pd.read_csv(data_file)
-        self.transform = transforms
-
-    def __len__(self):
-        return len(self.raw_data)
-
-    def __getitem__(self, idx):
-        label1 = int(self.raw_data.iloc[idx, 0])
-        label2 = int(self.raw_data.iloc[idx, 1])
-
-        im1name = self.raw_data.iloc[idx, 2]
-        image1 = Image.open(im1name)
-        im2name = self.raw_data.iloc[idx, 3]
-        image2 = Image.open(im2name)
-        
-        rt = self.raw_data.iloc[idx, 4]
-        sigma_or_accuracy = self.raw_data.iloc[idx, 5]
-        
-        # if you wanted to, you could perturb one of the images. 
-        # our final experiments did not do this, though. only some of them 
-        # image1 = image1.filter(ImageFilter.GaussianBlur(radius = sigma_or_accuracy))
-
-        if self.transform:
-            image1 = self.transform(image1)
-            image2 = self.transform(image2)
-
-        sample = {'label1': label1, 'label2': label2, 'image1': image1,
-                                            'image2': image2, 'rt': rt, 'acc': sigma_or_accuracy}
-
-        return sample
-
-# you can add other dataset classes below
-
 class DataModule(pl.LightningDataModule):
     def __init__(self, data_dir: str = "tiny-imagenet-200", batch_size=64):
         super().__init__()
         self.data_dir = data_dir
+        cross_entropy_weight = 1.0
+        perform_loss_weight = 1.0
+        exit_loss_weight = 1.0
+        json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
 
-        self.batch_size = batch_size
-        # DATA_DIR = 'tiny-imagenet-200' # Original images come in shapes of [3,64,64]
-        if data_dir == 'tiny-imagenet-200':
-            self.TRAIN_DIR = os.path.join(data_dir, 'train')
-            self.VALID_DIR = os.path.join(data_dir, 'val')
-            self.val_img_dir = os.path.join(self.VALID_DIR, 'images')
-            self.batch_size = batch_size
-
-            self.transform = T.Compose([
-                    T.Resize(224),
-                    T.RandomHorizontalFlip(),
-                    T.ToTensor(),
-                    T.Normalize(mean=[0.485, 0.456, 0.406], 
-                                std=[0.229, 0.224, 0.225])
-                ])
-
-        elif data_dir == 'psych-rt':
-            pass
-
-        else: 
-            # save_path_base = "/afs/crc.nd.edu/user/j/jdulay/research/psychophysics_model_search"
-
-            # use_performance_loss = False
-            # use_exit_loss = True
-
-            cross_entropy_weight = 1.0
-            perform_loss_weight = 1.0
-            exit_loss_weight = 1.0
-
-            # save_path_sub = "known_only_cross_entropy_" + str(cross_entropy_weight) + \
-            #                "_pfm_" + str(perform_loss_weight)
+        self.train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known_with_rt.json")
+        self.valid_known_known_with_rt_path = os.path.join(json_data_base, "valid_known_known_with_rt.json")
 
 
-            json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
-
-
-            #/print('DEBUG the path is here', json_data_base)
-
-
-            use_json_data = True
-            save_training_prob = False
-
-            # cherry-picked
-            self.train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known_with_rt.json")
-            self.valid_known_known_with_rt_path = os.path.join(json_data_base, "valid_known_known_with_rt.json")
-            # self.test_known_known_with_rt_path = os.path.join(json_data_base, "test_known_known_with_rt.json")
-
-
-    def prepare_data(self):
-        # print('self.data_dir ', self.data_dir)
-        if self.data_dir == 'tiny-imagenet-200':
-
-            # Open and read val annotations text file
-            fp = open(os.path.join(self.VALID_DIR, 'val_annotations.txt'), 'r')
-            data = fp.readlines()
-
-            # Create dictionary to store img filename (word 0) and corresponding
-            # label (word 1) for every line in the txt file (as key value pair)
-            val_img_dict = {}
-            for line in data:
-                words = line.split('\t')
-                val_img_dict[words[0]] = words[1]
-            fp.close()
-
-            for img, folder in val_img_dict.items():
-                newpath = (os.path.join(self.val_img_dir, folder))
-                if not os.path.exists(newpath):
-                    os.makedirs(newpath)
-                if os.path.exists(os.path.join(self.val_img_dir, img)):
-                    os.rename(os.path.join(self.val_img_dir, img), os.path.join(newpath, img))
-
-        elif self.data_dir == 'psych-rt': 
-            train_transform = T.Compose([
-                            # T.Resize(32, padding=0),
-                            T.Grayscale(num_output_channels=3),
-                            T.RandomHorizontalFlip(),
-                            T.ToTensor(),
-                            ])
-            self.dataset = OmniglotReactionTimeDataset('small_dataset.csv', 
-                        transforms=train_transform)
-
-            test_split = .2
-            shuffle_dataset = True
-
-            dataset_size = len(self.dataset)
-            indices = list(range(dataset_size))
-            split = int(np.floor(test_split * dataset_size))
-
-            if shuffle_dataset:
-                np.random.seed(2)
-                np.random.shuffle(indices)
-            self.train_indices, self.val_indices = indices[split:], indices[:split]
-
-            self.train_sampler = SubsetRandomSampler(self.train_indices)
-            self.val_sampler = SubsetRandomSampler(self.val_indices)
-
-        else:
-            # transforms here 
-            normalize = T.Normalize(mean=[0.485, 0.456, 0.406],
+        normalize = T.Normalize(mean=[0.485, 0.456, 0.406],
                                     std=[0.229, 0.224, 0.225])
 
-            train_transform = T.Compose([T.Resize((224,224), interpolation=3),
+        train_transform = T.Compose([T.Resize((224,224), interpolation=3),
                                                 T.ToTensor(),
                                                 normalize]) 
-            valid_transform = train_transform
+        valid_transform = train_transform
 
-            test_transform = T.Compose([T.CenterCrop(224),
+        test_transform = T.Compose([T.CenterCrop(224),
                                                 T.ToTensor(),
                                                 normalize])
 
 
-            self.train_known_known_with_rt_dataset = msd_net_dataset(json_path=self.train_known_known_with_rt_path,
+        self.train_known_known_with_rt_dataset = msd_net_dataset(json_path=self.train_known_known_with_rt_path,
                                                                     transform=train_transform)
 
-            # and this one hehe
-            self.valid_known_known_with_rt_dataset = msd_net_dataset(json_path=self.valid_known_known_with_rt_path,
+        self.valid_known_known_with_rt_dataset = msd_net_dataset(json_path=self.valid_known_known_with_rt_path,
                                                                     transform=valid_transform) 
 
 
     def train_dataloader(self):
-        if self.data_dir == 'tiny-imagenet-200':
-            return self._generate_dataloader(self.TRAIN_DIR, "train",
-                                  transform=self.transform)
-        elif self.data_dir == 'psych-rt': 
-            return DataLoader(self.dataset, batch_size=self.batch_size, sampler=self.train_sampler)
-        else: 
-            return DataLoader(self.train_known_known_with_rt_dataset,
-                                                batch_size=self.batch_size,
+        return DataLoader(self.train_known_known_with_rt_dataset,
+                                                batch_size=16,
                                                 shuffle=True,
                                                 drop_last=False,
                                                 collate_fn=self.collate
@@ -222,39 +75,12 @@ class DataModule(pl.LightningDataModule):
 
 
     def val_dataloader(self):
-        if self.data_dir == 'tiny-imagenet-200':
-            return self._generate_dataloader(self.val_img_dir, "val",
-                                  transform=self.transform)
-        elif self.data_dir == 'psych-rt': 
-            return DataLoader(self.dataset, batch_size=self.batch_size, sampler=self.val_sampler)
-        else: 
-            return DataLoader(self.valid_known_known_with_rt_dataset,
-                                                batch_size=self.batch_size,
+        return DataLoader(self.valid_known_known_with_rt_dataset,
+                                                batch_size=16,
                                                 shuffle=True,
                                                 drop_last=False,
                                                 collate_fn=self.collate
                                                 )
-    # helper function for tiny class
-    def _generate_dataloader(self, data, name, transform):
-        if data is None: 
-            return None
-        
-        # Read image files to pytorch dataset using ImageFolder, a generic data 
-        # loader where images are in format root/label/filename
-        # See https://pytorch.org/vision/stable/datasets.html
-        if transform is None:
-            dataset = torchvision.datasets.ImageFolder(data, transform=T.ToTensor())
-        else:
-            dataset = torchvision.datasets.ImageFolder(data, transform=transform)
-
-        
-        # Wrap image dataset (defined above) in dataloader 
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, 
-                            shuffle=(name=="train"))
-        
-        return dataloader
-
-
     def collate(self, batch):
         try:
             PADDING_CONSTANT = 0
