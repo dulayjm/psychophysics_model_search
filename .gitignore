@@ -2,6 +2,7 @@
 omniglot_realfake/
 tiny-imagenet-200/
 tiny-imagenet-200.zip
+*.json
 
 # pycache
 __pycache__/

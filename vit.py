@@ -147,7 +147,8 @@ class msd_net_dataset(Dataset):
 class ViTLightningModule(pl.LightningModule):
     def __init__(self):
         super(ViTLightningModule, self).__init__()
-        self.vit = ViTForImageClassification.from_pretrained('google/vit-base-patch16-224-in21k', num_labels=1000)
+        # self.vit = ViTForImageClassification.from_pretrained('google/vit-base-patch16-224-in21k', num_labels=1000)
+        self.vit = torchvision.models.vit_b_32(pretrained=True) 
         self.num_labels=10000
         self.criterion = nn.CrossEntropyLoss()
         #   num_labels=10,
