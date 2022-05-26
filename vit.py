@@ -54,7 +54,7 @@ def collate_fn(examples):
 class CustomDataModule(pl.LightningDataModule):
     def __init__(self):
         batch_size = 16
-        self.num_labels = 1000
+        self.num_labels = 335
         json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
 
         self.train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known_with_rt.json")
@@ -147,9 +147,9 @@ class msd_net_dataset(Dataset):
 class ViTLightningModule(pl.LightningModule):
     def __init__(self):
         super(ViTLightningModule, self).__init__()
-        # self.vit = ViTForImageClassification.from_pretrained('google/vit-base-patch16-224-in21k', num_labels=1000)
-        self.vit = torchvision.models.vit_b_32(pretrained=True) 
-        self.num_labels=10000
+        self.vit = ViTForImageClassification.from_pretrained('google/vit-base-patch16-224-in21k', num_labels=335)
+        # self.vit = torchvision.models.vit_b_32(pretrained=True) 
+        self.num_labels=335
         self.criterion = nn.CrossEntropyLoss()
         #   num_labels=10,
         #   id2label=id2label,
@@ -216,7 +216,7 @@ if __name__ == '__main__':
                         help='number of epochs to use')
     parser.add_argument('--batch_size', type=int, default=16,
                         help='batch size')
-    parser.add_argument('--num_classes', type=int, default=1000,
+    parser.add_argument('--num_classes', type=int, default=335,
                         help='number of classes')
     parser.add_argument('--learning_rate', type=float, default=0.015, 
                         help='learning rate')
@@ -236,7 +236,7 @@ if __name__ == '__main__':
     wandb_logger = None
     if args.log:
         logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, 'DEBUG')
-        wandb_logger = WandbLogger(name=logger_name, project="psychophysics_model_search_07")
+        wandb_logger = WandbLogger(name=logger_name, project="psychophysics_model_search_08")
     
     metrics_callback = MetricCallback()
 
@@ -244,9 +244,6 @@ if __name__ == '__main__':
     if os.path.isdir(path):
         os.rmdir(path)
 
-
-
-    # because all of this fits in a data module
     datamodule = CustomDataModule()
     model = ViTLightningModule()
     trainer = pl.Trainer(

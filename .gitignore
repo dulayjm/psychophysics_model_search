@@ -4,6 +4,9 @@ tiny-imagenet-200/
 tiny-imagenet-200.zip
 *.json
 
+file_editor.py
+foo.txt
+
 # pycache
 __pycache__/
 

@@ -29,8 +29,11 @@ import random
 
 import math
 # from tqdm import tqdm
+from utils.idx_to_class import get_class_to_idx
 
 from timeit import default_timer as timer
+
+idx_to_class = get_class_to_idx()
 
 class DataModule(pl.LightningDataModule):
     def __init__(self, data_dir: str = "tiny-imagenet-200", batch_size=64):
@@ -116,6 +119,7 @@ class DataModule(pl.LightningDataModule):
             # input_batch = batch
 
             for i in range(len(batch)):
+                # labels in collate should already be adjusted from __getitem__
                 b_img = batch[i]["img"]
                 input_batch[i,:,:b_img.shape[1],:] = b_img
                 l = batch[i]["gt_label"]
@@ -188,9 +192,14 @@ class msd_net_dataset(Dataset):
         else:
             pass
 
+        # should prevent ViT breaking 
+        # while using precise number of classes
+        orig_label = item['label']
+        re_index_label = idx_to_class[orig_label]
+
         return {
             "img": img,
-            "gt_label": item["label"],
+            "gt_label": re_index_label, 
             "rt": rt,
             "category": item["category"]
         }
