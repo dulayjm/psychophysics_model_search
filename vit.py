@@ -200,7 +200,9 @@ class ViTLightningModule(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         loss, accuracy = self.common_step(batch, batch_idx)     
-
+        self.log("test_loss", loss, on_epoch=True)
+        self.log("test_accuracy", accuracy, on_epoch=True)
+        
         return loss
 
     def configure_optimizers(self):
@@ -212,6 +214,8 @@ class ViTLightningModule(pl.LightningModule):
 if __name__ == '__main__':
     # args
     parser = ArgumentParser(description='Neural Architecture Search for Psychophysics')
+    parser.add_argument('--test', type=bool, default=False,
+                        help='enable test only mode')
     parser.add_argument('--num_epochs', type=int, default=25,
                         help='number of epochs to use')
     parser.add_argument('--batch_size', type=int, default=16,
@@ -246,6 +250,7 @@ if __name__ == '__main__':
 
     datamodule = CustomDataModule()
     model = ViTLightningModule()
+
     trainer = pl.Trainer(
         max_epochs=20, 
         devices=1, 
@@ -257,14 +262,17 @@ if __name__ == '__main__':
         progress_bar_refresh_rate=0
     )
 
-    trainer.fit(model, datamodule)
-    
+    if args.train:
+        trainer.fit(model, datamodule)
+        
+        if os.path.isdir(path):
+            os.rmdir(path)
 
+        save_name = "{}seed-{}-{}-imagenet.pth".format('DEBUG', args.model_name, args.dataset_name)
+        trainer.save_checkpoint(save_name)
+        
     if os.path.isdir(path):
         os.rmdir(path)
 
-    save_name = "{}seed-{}-{}-imagenet.pth".format('DEBUG', args.model_name, args.dataset_name)
-    trainer.save_checkpoint(save_name)
-    
-    if os.path.isdir(path):
-        os.rmdir(path)
+    # test model performance
+    trainer.test(model, datamodule)

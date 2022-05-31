@@ -84,6 +84,16 @@ class DataModule(pl.LightningDataModule):
                                                 drop_last=False,
                                                 collate_fn=self.collate
                                                 )
+
+
+    def test_dataloader(self):
+        return DataLoader(self.valid_known_known_with_rt_dataset,
+                                                batch_size=16,
+                                                shuffle=True,
+                                                drop_last=False,
+                                                collate_fn=self.collate
+                                                )
+
     def collate(self, batch):
         try:
             PADDING_CONSTANT = 0
