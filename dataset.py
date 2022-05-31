@@ -86,7 +86,7 @@ class DataModule(pl.LightningDataModule):
                                                 )
 
 
-    def test_dataloader(self):
+    def test_dataloader(self): # why is this not registreing ...
         return DataLoader(self.valid_known_known_with_rt_dataset,
                                                 batch_size=16,
                                                 shuffle=True,

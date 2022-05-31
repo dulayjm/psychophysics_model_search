@@ -23,6 +23,10 @@ vit_*
 ViT-imagenet-DEBUG-imagenet/
 ViT*
 VGG*
+.__afs*
+
+
+ppV*
 
 # models
 *.pth

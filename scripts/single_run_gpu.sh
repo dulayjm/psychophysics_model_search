@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#$ -N VGG_XE
+#$ -N VGG_XE_test
 #$ -q gpu
 #S -m abe
 #$ -l gpu=1

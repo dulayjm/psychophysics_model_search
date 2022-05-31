@@ -16,7 +16,7 @@ from torchvision import transforms as T
 
 from pytorch_lightning.loggers import WandbLogger
 
-from dataset import  DataModule, msd_net_dataset
+from dataset import DataModule, msd_net_dataset
 from psychloss import RtPsychCrossEntropyLoss
 
 #####################################
@@ -31,7 +31,6 @@ unknown_thresholds = [0.0035834426525980234, 0.0035834424197673798,
                       0.0035834426525980234, 0.0035834424197673798, 0.0035834424197673798]
 #                                                       
 #####################################
-
 
 class MetricCallback(Callback):
     def __init__(self):
@@ -60,7 +59,8 @@ class Model(LightningModule):
             configuration = ViTConfig(return_dict=False) # you can edit model params
             self.model = ViTModel(configuration)
         elif self.model_name == 'VGG':
-            self.model = torchvision.models.vgg16(pretrained=True)
+            self.model = torchvision.models.vgg16(pretrained=True, num_classes=335)
+            # you might need to mod classes here
         elif self.model_name == 'googlenet':
             self.model = torchvision.models.googlenet(pretrained=True)
         elif self.model_name == 'alexnet':
@@ -276,6 +276,113 @@ class Model(LightningModule):
             'val_acc': val_acc
         }
     
+    def test_step(self, batch, batch_idx):
+        
+        if self.dataset_name == "psych_rt":
+            image1 = batch['image1']
+            image2 = batch['image2']
+
+            label1 = batch['label1']
+            label2 = batch['label2']
+
+            if self.loss_name == 'psych-acc':
+                psych = batch['acc']
+            else: 
+                psych = batch['rt']
+
+            # concatenate the batched images
+            inputs = torch.cat([image1, image2], dim=0)
+            labels = torch.cat([label1, label2], dim=0)
+
+            # apply psychophysical annotations to correct images
+            psych_tensor = torch.zeros(len(labels))
+            j = 0 
+            for i in range(len(psych_tensor)):
+                if i % 2 == 0: 
+                    psych_tensor[i] = psych[j]
+                    j += 1
+                else: 
+                    psych_tensor[i] = psych_tensor[i-1]
+            psych_tensor = psych_tensor
+
+
+            outputs = self.model(inputs)
+
+            loss = None
+            if self.loss_name == 'psych_rt':
+                loss = RtPsychCrossEntropyLoss(outputs, labels, psych_tensor)
+            else:
+                loss = self.default_loss_fn(outputs, labels)
+
+            # calculate accuracy per class
+            labels_hat = torch.argmax(outputs, dim=1)
+            val_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
+
+        elif self.dataset_name == 'tiny-imagenet-200': 
+            inputs, labels = batch
+            # TODO: change to psych-imagenet datset from lab
+
+            outputs = self.model(inputs)
+            loss = self.default_loss_fn(outputs, labels)
+
+            labels_hat = torch.argmax(outputs, dim=1)
+            val_acc = torch.sum(labels.data == labels_hat).item() / (len(labels) * 1.0)
+
+        else: 
+            # this is a setting, but we probably don't need it 
+
+            # if i in rt_indices:
+            #     batch = next(rt_iter)
+
+            # elif i in no_rt_indices:
+            #     try:
+            #         batch = next(no_rt_iter)
+            #     except:
+            #         continue
+
+            input = batch["imgs"]
+            rts = batch["rts"]
+            target = batch["labels"]
+            input_var = torch.autograd.Variable(input)
+            target_var = torch.autograd.Variable(target).long()
+
+            # print('shape of the input is:', input_var.shape)
+            # print('shape of the target is:', target.shape)
+
+            # TODO: The model expects the rts and handles them in a custom way 
+            # 1 - handle them with our custom loss instead 
+            # 2 - later, try them with the MSDensenet, too
+
+            # output, feature, end_time = self.model(input_var)
+            
+            # see where are files compare here ..
+
+            
+            outputs = self.model(input_var)
+            outputs = outputs[1]
+            print('outputs shape is', outputs.shape)
+            print('outputs are', outputs)
+
+            
+            if self.loss_name == 'cross_entropy':
+                loss = self.default_loss_fn(outputs, target_var)
+            else:
+                # psych loss
+                loss = RtPsychCrossEntropyLoss(outputs, target_var, rts)
+
+
+            labels_hat = torch.argmax(outputs, dim=1)
+            val_acc = torch.sum(target_var.data == labels_hat).item() / (len(target_var) * 1.0)
+
+        self.log('test_loss', loss)
+        self.log('test_acc', val_acc)
+
+        return {
+            'test_loss': loss,
+            'test_acc': val_acc
+        }        
+
+
 if __name__ == '__main__':
     # args
     parser = ArgumentParser(description='Neural Architecture Search for Psychophysics')
@@ -320,7 +427,9 @@ if __name__ == '__main__':
         auto_select_gpus=True,
         callbacks=[metrics_callback],
         logger=wandb_logger,
-        progress_bar_refresh_rate=0
+        progress_bar_refresh_rate=0,
+        limit_train_batches=0,
+        limit_val_batches=0
     ) 
 
     model_ft = Model()
@@ -328,9 +437,4 @@ if __name__ == '__main__':
     data_module = DataModule(data_dir=args.dataset_name, batch_size=args.batch_size)
 
     trainer.fit(model_ft, data_module)
-    if os.path.isdir(path):
-        os.rmdir(path)
-    save_name = "{}seed-{}-{}-imagenet.pth".format(random_seed, args.model_name, args.dataset_name)
-    trainer.save_checkpoint(save_name)
-    if os.path.isdir(path):
-        os.rmdir(path)
+    trainer.test(model_ft, data_module, ckpt_path=None)

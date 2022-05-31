@@ -1,4 +1,4 @@
-#$ -N ViT_XE
+#$ -N ViT_XE_Test
 #$ -q gpu
 #S -m abe
 #$ -l gpu=1

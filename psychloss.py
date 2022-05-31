@@ -7,7 +7,8 @@ def RtPsychCrossEntropyLoss(outputs, targets, psych):
     print(type(targets))
     print(type(outputs))
     print('the outputs are', outputs)
-    batch_size = 16
+    num_examples = targets.shape[0]
+    batch_size = outputs.shape[0]
 
     # converting reaction time to penalty
     # 10002 is close to the max penalty time seen in the data
@@ -26,7 +27,7 @@ def RtPsychCrossEntropyLoss(outputs, targets, psych):
     outputs = _log_softmax(outputs)
     outputs = outputs[range(batch_size), targets]
 
-    return - torch.sum(outputs) / 16
+    return - torch.sum(outputs) / num_examples
 
 # mean accuracy psychophysical loss
 def AccPsychCrossEntropyLoss(outputs, targets, psych):

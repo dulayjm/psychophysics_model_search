@@ -16,8 +16,6 @@ import json
 
 from pytorch_lightning.loggers import WandbLogger
 
-from psychloss import RtPsychCrossEntropyLoss
-
 from transformers import ViTForImageClassification, AdamW
 import torch.nn as nn
 
@@ -33,6 +31,13 @@ from torchvision.transforms import (CenterCrop,
                                     ToTensor)
 
 from psychloss import RtPsychCrossEntropyLoss
+
+from utils.idx_to_class import get_class_to_idx
+
+
+idx_to_class = get_class_to_idx()
+
+
 
 # setup the data _ad-hoc_ first, for the imagenet style stuff 
 class MetricCallback(Callback):
@@ -54,7 +59,7 @@ def collate_fn(examples):
 class CustomDataModule(pl.LightningDataModule):
     def __init__(self):
         batch_size = 16
-        self.num_labels = 335
+        self.num_labels = 1000
         json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
 
         self.train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known_with_rt.json")
@@ -96,6 +101,9 @@ class CustomDataModule(pl.LightningDataModule):
         val_dataloader = DataLoader(self.valid_known_known_with_rt_dataset, batch_size=16, collate_fn=collate_fn)
         return val_dataloader
 
+    def test_dataloader(self):
+        val_dataloader = DataLoader(self.valid_known_known_with_rt_dataset, batch_size=16, collate_fn=collate_fn)
+        return val_dataloader
 
 class msd_net_dataset(Dataset):
     def __init__(self,
@@ -136,6 +144,11 @@ class msd_net_dataset(Dataset):
         # No random weights for reaction time
         else:
             pass
+        
+
+        orig_label = item['label']
+        re_index_label = idx_to_class[orig_label]
+        print('re_index_label', re_index_label)
 
         return {
             "img": img,
@@ -176,6 +189,9 @@ class ViTLightningModule(pl.LightningModule):
             loss = self.criterion(logits, labels)
 
         predictions = logits.argmax(-1)
+        print('predictions are', predictions)
+        print('labels are', labels)
+        
         #print('debug here')
         correct = (predictions == labels).sum().item()
         accuracy = correct/pixel_values.shape[0]
@@ -199,6 +215,8 @@ class ViTLightningModule(pl.LightningModule):
         return loss
 
     def test_step(self, batch, batch_idx):
+        # print('batch is in testing', batch)
+        # 1/0
         loss, accuracy = self.common_step(batch, batch_idx)     
         self.log("test_loss", loss, on_epoch=True)
         self.log("test_accuracy", accuracy, on_epoch=True)
@@ -214,7 +232,7 @@ class ViTLightningModule(pl.LightningModule):
 if __name__ == '__main__':
     # args
     parser = ArgumentParser(description='Neural Architecture Search for Psychophysics')
-    parser.add_argument('--test', type=bool, default=False,
+    parser.add_argument('--train', type=bool, default=False,
                         help='enable test only mode')
     parser.add_argument('--num_epochs', type=int, default=25,
                         help='number of epochs to use')
@@ -259,20 +277,11 @@ if __name__ == '__main__':
         auto_select_gpus=True, 
         logger=wandb_logger,
         callbacks=[metrics_callback],
-        progress_bar_refresh_rate=0
-    )
+        progress_bar_refresh_rate=0,
+        limit_train_batches=0,
+        limit_val_batches=0
+    ) # hacks 
 
-    if args.train:
-        trainer.fit(model, datamodule)
-        
-        if os.path.isdir(path):
-            os.rmdir(path)
+    trainer.fit(model, datamodule)
 
-        save_name = "{}seed-{}-{}-imagenet.pth".format('DEBUG', args.model_name, args.dataset_name)
-        trainer.save_checkpoint(save_name)
-        
-    if os.path.isdir(path):
-        os.rmdir(path)
-
-    # test model performance
-    trainer.test(model, datamodule)
+    trainer.test(model, datamodule, ckpt_path=None)
