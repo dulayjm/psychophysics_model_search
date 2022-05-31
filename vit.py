@@ -248,9 +248,9 @@ if __name__ == '__main__':
     model = ViTLightningModule()
     trainer = pl.Trainer(
         max_epochs=20, 
-        devices=4, 
+        devices=1, 
         accelerator='gpu',
-        strategy='ddp',
+        # strategy='ddp',
         auto_select_gpus=True, 
         logger=wandb_logger,
         callbacks=[metrics_callback],

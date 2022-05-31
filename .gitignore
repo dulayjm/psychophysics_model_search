@@ -21,6 +21,8 @@ wanb/
 vit_debug*
 vit_*
 ViT-imagenet-DEBUG-imagenet/
+ViT*
+VGG*
 
 # models
 *.pth

@@ -309,12 +309,12 @@ if __name__ == '__main__':
 
     wandb_logger = None
     if args.log:
-        logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, random_seed)
+        logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, 3)
         wandb_logger = WandbLogger(name=logger_name,project="psychophysics_model_search_08")
 
     trainer = pl.Trainer(
         max_epochs=args.num_epochs,
-        devices=4, 
+        devices=1, 
         accelerator='gpu',            
         strategy='ddp',
         auto_select_gpus=True,

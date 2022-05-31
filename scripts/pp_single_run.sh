@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#$ -N imagenet_VGG_psych
+#$ -N VGG_psych
 #$ -q gpu
 #S -m abe
-#$ -l gpu=4
+#$ -l gpu=1
 
 BASE_PATH="$HOME/research/psychophysics_model_search" 
 

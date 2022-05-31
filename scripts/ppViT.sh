@@ -1,7 +1,7 @@
-#$ -N imagenet_ViT_Psych
+#$ -N vit_Psych
 #$ -q gpu
 #S -m abe
-#$ -l gpu=4
+#$ -l gpu=1
 
 BASE_PATH="$HOME/research/psychophysics_model_search" 
 

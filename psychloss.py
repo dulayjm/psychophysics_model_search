@@ -18,9 +18,8 @@ def RtPsychCrossEntropyLoss(outputs, targets, psych):
 
     # adding penalty to each of the output logits 
     for i in range(len(outputs)):
+        print('psych[i]', psych[i])
         val = psych[i] / 30
-        if np.isnan(val):
-            val = 0 
             
         outputs[i] += val 
 
