@@ -56,10 +56,11 @@ class Model(LightningModule):
 
         # define model - using argparser or someting like tha
         if self.model_name == 'ViT':
-            configuration = ViTConfig(return_dict=False) # you can edit model params
-            self.model = ViTModel(configuration)
+            print('use the other script')
+            pass
         elif self.model_name == 'VGG':
-            self.model = torchvision.models.vgg16(pretrained=True, num_classes=335)
+            self.model = torchvision.models.vgg16(pretrained=True)
+            self.fc = nn.Linear(4096, 335) # might need to be 1000 in ...
             # you might need to mod classes here
         elif self.model_name == 'googlenet':
             self.model = torchvision.models.googlenet(pretrained=True)
@@ -67,6 +68,11 @@ class Model(LightningModule):
             self.model = torchvision.models.alexnet(pretrained=True)
         else:
             self.model = torchvision.models.resnet50(pretrained=True)
+
+    def forward(self, x):
+        x = self.model(x)
+        x = self.fc(x)
+        return x
 
     def configure_optimizers(self):
         return torch.optim.SGD(self.parameters(), lr=self.learning_rate)

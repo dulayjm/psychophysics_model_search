@@ -164,12 +164,14 @@ class ViTLightningModule(pl.LightningModule):
         # self.vit = torchvision.models.vit_b_32(pretrained=True) 
         self.num_labels=335
         self.criterion = nn.CrossEntropyLoss()
+        self.fc = nn.Linear(4096, 335)
         #   num_labels=10,
         #   id2label=id2label,
         #   label2id=label2id
 
     def forward(self, pixel_values):
         outputs = self.vit(pixel_values=pixel_values)
+        outputs = self.fc(outputs)
         return outputs.logits
 
     def common_step(self, batch, batch_idx):
