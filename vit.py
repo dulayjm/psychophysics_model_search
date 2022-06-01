@@ -59,7 +59,7 @@ def collate_fn(examples):
 class CustomDataModule(pl.LightningDataModule):
     def __init__(self):
         batch_size = 16
-        self.num_labels = 1000
+        self.num_labels = 335
         json_data_base = '/afs/crc.nd.edu/user/j/jdulay'
 
         self.train_known_known_with_rt_path = os.path.join(json_data_base, "train_known_known_with_rt.json")
@@ -171,7 +171,8 @@ class ViTLightningModule(pl.LightningModule):
 
     def forward(self, pixel_values):
         outputs = self.vit(pixel_values=pixel_values)
-        outputs = self.fc(outputs)
+        outputs = self.fc(outputs.logits)
+        print('outputs are', outputs.shape)
         return outputs.logits
 
     def common_step(self, batch, batch_idx):
@@ -191,8 +192,8 @@ class ViTLightningModule(pl.LightningModule):
             loss = self.criterion(logits, labels)
 
         predictions = logits.argmax(-1)
-        print('predictions are', predictions)
-        print('labels are', labels)
+        # print('predictions are', predictions)
+        # print('labels are', labels)
         
         #print('debug here')
         correct = (predictions == labels).sum().item()

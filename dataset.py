@@ -36,9 +36,8 @@ from timeit import default_timer as timer
 idx_to_class = get_class_to_idx()
 
 class DataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: str = "tiny-imagenet-200", batch_size=64):
+    def __init__(self, batch_size=64):
         super().__init__()
-        self.data_dir = data_dir
         cross_entropy_weight = 1.0
         perform_loss_weight = 1.0
         exit_loss_weight = 1.0

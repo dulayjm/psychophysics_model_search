@@ -55,24 +55,13 @@ class Model(LightningModule):
         self.default_loss_fn = nn.CrossEntropyLoss()
 
         # define model - using argparser or someting like tha
-        if self.model_name == 'ViT':
-            print('use the other script')
-            pass
-        elif self.model_name == 'VGG':
-            self.model = torchvision.models.vgg16(pretrained=True)
-            self.fc = nn.Linear(4096, 335) # might need to be 1000 in ...
-            # you might need to mod classes here
-        elif self.model_name == 'googlenet':
-            self.model = torchvision.models.googlenet(pretrained=True)
-        elif self.model_name == 'alexnet':
-            self.model = torchvision.models.alexnet(pretrained=True)
-        else:
-            self.model = torchvision.models.resnet50(pretrained=True)
+        self.model = torchvision.models.vgg16(pretrained=True) 
+        self.fc = nn.Linear(1000, 335)
+
 
     def forward(self, x):
         x = self.model(x)
-        x = self.fc(x)
-        return x
+        return self.fc(x.view(x.size(0), -1))
 
     def configure_optimizers(self):
         return torch.optim.SGD(self.parameters(), lr=self.learning_rate)
@@ -142,6 +131,8 @@ class Model(LightningModule):
             #         continue
 
             # print('batch is here:', batch)
+            print('len of input', len(input))
+            1/0
             input = batch["imgs"]
             rts = batch["rts"]
             target = batch["labels"]
@@ -157,13 +148,13 @@ class Model(LightningModule):
 
             # output, feature, end_time = self.model(input_var)
             outputs = self.model(input_var)
-            print('outputs are', outputs)
 
             if self.loss_name == 'cross_entropy':
                 loss = self.default_loss_fn(outputs, target_var)
             else:
                 # psych loss
                 loss = RtPsychCrossEntropyLoss(outputs, target_var, rts)
+
             labels_hat = torch.argmax(outputs, dim=1)
             train_acc = torch.sum(target_var.data == labels_hat).item() / (len(target_var) * 1.0)
 
@@ -207,6 +198,7 @@ class Model(LightningModule):
 
 
             outputs = self.model(inputs)
+
 
             loss = None
             if self.loss_name == 'psych_rt':
@@ -259,9 +251,6 @@ class Model(LightningModule):
 
             
             outputs = self.model(input_var)
-            outputs = outputs[1]
-            print('outputs shape is', outputs.shape)
-            print('outputs are', outputs)
 
             
             if self.loss_name == 'cross_entropy':
@@ -349,7 +338,8 @@ class Model(LightningModule):
             input = batch["imgs"]
             rts = batch["rts"]
             target = batch["labels"]
-            input_var = torch.autograd.Variable(input)
+            # input_var = torch.autograd.Variable(input)
+            input_var = input
             target_var = torch.autograd.Variable(target).long()
 
             # print('shape of the input is:', input_var.shape)
@@ -363,11 +353,8 @@ class Model(LightningModule):
             
             # see where are files compare here ..
 
-            
-            outputs = self.model(input_var)
-            outputs = outputs[1]
+            outputs = self.model.forward(input_var)
             print('outputs shape is', outputs.shape)
-            print('outputs are', outputs)
 
             
             if self.loss_name == 'cross_entropy':
@@ -377,8 +364,13 @@ class Model(LightningModule):
                 loss = RtPsychCrossEntropyLoss(outputs, target_var, rts)
 
 
-            labels_hat = torch.argmax(outputs, dim=1)
-            val_acc = torch.sum(target_var.data == labels_hat).item() / (len(target_var) * 1.0)
+            # labels_hat = torch.argmax(outputs, dim=1)
+
+            labels_hat = outputs.argmax(-1)
+
+            # val_acc = torch.sum(target_var.data == labels_hat).item() / (len(target_var) * 1.0)
+            correct = (labels_hat == target_var).sum().item()
+            val_acc = correct/input_var.shape[0]
 
         self.log('test_loss', loss)
         self.log('test_acc', val_acc)
@@ -426,10 +418,9 @@ if __name__ == '__main__':
         wandb_logger = WandbLogger(name=logger_name,project="psychophysics_model_search_08")
 
     trainer = pl.Trainer(
-        max_epochs=args.num_epochs,
+        max_epochs=1,
         devices=1, 
         accelerator='gpu',            
-        strategy='ddp',
         auto_select_gpus=True,
         callbacks=[metrics_callback],
         logger=wandb_logger,
@@ -440,7 +431,7 @@ if __name__ == '__main__':
 
     model_ft = Model()
 
-    data_module = DataModule(data_dir=args.dataset_name, batch_size=args.batch_size)
+    data_module = DataModule(batch_size=args.batch_size)
 
     trainer.fit(model_ft, data_module)
     trainer.test(model_ft, data_module, ckpt_path=None)
