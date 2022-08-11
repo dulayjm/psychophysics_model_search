@@ -56,11 +56,13 @@ class Model(LightningModule):
 
         # define model - using argparser or someting like tha
         self.model = torchvision.models.vgg16(pretrained=True) 
+        self.dropout = nn.Dropout(0.5)
         self.fc = nn.Linear(1000, 335)
 
 
     def forward(self, x):
         x = self.model(x)
+        x = self.dropout(x)
         return self.fc(x.view(x.size(0), -1))
 
     def configure_optimizers(self):
@@ -415,7 +417,7 @@ if __name__ == '__main__':
     wandb_logger = None
     if args.log:
         logger_name = "{}-{}-{}-imagenet".format(args.model_name, args.dataset_name, 3)
-        wandb_logger = WandbLogger(name=logger_name,project="psychophysics_model_search_08")
+        wandb_logger = WandbLogger(name=logger_name,project="psychophysics_model_search_dropout")
 
     trainer = pl.Trainer(
         max_epochs=1,
